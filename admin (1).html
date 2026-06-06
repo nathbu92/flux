@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚡ Admin — DJ Kiosk</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080808;
+  --surface: #111;
+  --surface2: #161616;
+  --border: #222;
+  --green: #1DB954;
+  --green-dim: rgba(29,185,84,.1);
+  --red: #e53935;
+  --amber: #ffab00;
+  --text: #f0f0f0;
+  --muted: #555;
+  --display: 'Bebas Neue', sans-serif;
+  --mono: 'Space Mono', monospace;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:var(--mono); min-height:100vh; }
+
+/* SETUP */
+#setup {
+  display:flex; flex-direction:column; align-items:center;
+  justify-content:center; min-height:100vh; gap:16px; padding:40px;
+}
+#setup h1 { font-family:var(--display); font-size:2.5rem; color:var(--amber); letter-spacing:3px; }
+#setup p { color:var(--muted); font-size:0.78rem; max-width:400px; line-height:1.6; text-align:center; }
+#setup input {
+  width:100%; max-width:420px; background:var(--surface2); border:1px solid var(--border);
+  border-radius:4px; padding:12px 16px; color:var(--text); font-family:var(--mono);
+  font-size:0.82rem; outline:none;
+}
+#setup input:focus { border-color:var(--amber); }
+#setup label { font-size:0.62rem; color:var(--muted); letter-spacing:2px; align-self:flex-start; margin-left:calc(50% - 210px); }
+
+/* HEADER */
+header {
+  background:var(--surface); border-bottom:1px solid var(--border);
+  padding:14px 28px; display:flex; align-items:center; justify-content:space-between;
+  position:sticky; top:0; z-index:50;
+}
+header h1 { font-family:var(--display); font-size:1.6rem; color:var(--amber); letter-spacing:2px; }
+.now-playing { display:flex; align-items:center; gap:10px; font-size:0.72rem; color:var(--muted); max-width:300px; }
+.now-playing .dot { width:7px;height:7px;background:var(--green);border-radius:50%;flex-shrink:0;animation:pulse 1.5s infinite; }
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.7)}}
+.now-playing span { white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text); }
+
+.stats {
+  display:flex; gap:20px; font-size:0.7rem;
+}
+.stat { display:flex; flex-direction:column; align-items:center; gap:2px; }
+.stat .val { font-size:1.2rem; font-weight:700; font-family:var(--display); }
+.stat .lbl { color:var(--muted); font-size:0.6rem; letter-spacing:1px; }
+.stat.pending .val { color:var(--amber); }
+.stat.approved .val { color:var(--green); }
+.stat.refused .val { color:var(--red); }
+
+/* MAIN */
+main { max-width:900px; margin:0 auto; padding:28px 24px; }
+
+/* SECTION */
+.section-label {
+  font-size:0.62rem; color:var(--muted); letter-spacing:2px;
+  text-transform:uppercase; border-bottom:1px solid var(--border);
+  padding-bottom:6px; margin-bottom:16px;
+}
+
+/* ADMIN CARDS */
+#pending-list { display:flex; flex-direction:column; gap:10px; margin-bottom:36px; }
+#history-list { display:flex; flex-direction:column; gap:8px; }
+
+.admin-card {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:4px; padding:14px 16px;
+  display:flex; align-items:center; gap:14px;
+  animation:slideIn .3s ease;
+}
+@keyframes slideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+.admin-card.approved { border-color:rgba(29,185,84,.3); }
+.admin-card.refused { border-color:rgba(229,57,53,.2); opacity:.6; }
+
+.admin-card img { width:52px;height:52px;border-radius:3px;object-fit:cover;flex-shrink:0; }
+.admin-card .info { flex:1;overflow:hidden; }
+.admin-card .name { font-size:0.88rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.admin-card .artist { font-size:0.72rem;color:var(--muted);margin-top:2px; }
+.admin-card .ts { font-size:0.65rem;color:var(--muted);margin-top:4px;letter-spacing:1px; }
+
+.actions { display:flex; gap:8px; flex-shrink:0; }
+.btn-approve, .btn-refuse, .btn-undo {
+  border:none; border-radius:3px; padding:9px 16px;
+  font-family:var(--mono); font-size:0.72rem; font-weight:700;
+  cursor:pointer; letter-spacing:.5px; transition:opacity .15s;
+}
+.btn-approve { background:var(--green); color:#000; }
+.btn-refuse  { background:var(--red);   color:#fff; }
+.btn-undo    { background:var(--surface); border:1px solid var(--border); color:var(--muted); }
+.btn-approve:hover,.btn-refuse:hover,.btn-undo:hover { opacity:.8; }
+
+.badge {
+  font-size:0.62rem; padding:3px 8px; border-radius:2px;
+  flex-shrink:0; font-weight:700; letter-spacing:.5px;
+}
+.badge.pending  { background:var(--amber); color:#000; }
+.badge.approved { background:var(--green); color:#000; }
+.badge.refused  { background:#252525; color:var(--muted); }
+
+.empty { color:var(--muted); font-size:0.75rem; text-align:center; padding:24px 0; }
+
+/* TOOLBAR */
+.toolbar { display:flex; gap:10px; margin-bottom:20px; }
+.btn {
+  background:var(--green); color:#000; border:none; border-radius:4px;
+  padding:10px 20px; font-family:var(--mono); font-size:0.78rem;
+  font-weight:700; cursor:pointer; transition:opacity .2s;
+}
+.btn.outline { background:transparent; border:1px solid var(--border); color:var(--muted); }
+.btn:hover { opacity:.85; }
+
+/* SPOTIFY AUTH */
+.auth-strip {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:4px; padding:12px 16px;
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:24px; font-size:0.75rem;
+}
+.auth-strip .sp-status { display:flex; align-items:center; gap:8px; color:var(--muted); }
+.auth-strip .sp-status.ok { color:var(--green); }
+
+/* TOAST */
+#toast {
+  position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(50px);
+  background:var(--surface2); border:1px solid var(--amber); color:var(--text);
+  padding:10px 22px; border-radius:4px; font-size:0.76rem;
+  transition:transform .3s,opacity .3s; opacity:0; z-index:999;
+}
+#toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
+
+::-webkit-scrollbar{width:3px} ::-webkit-scrollbar-thumb{background:var(--border)}
+</style>
+</head>
+<body>
+
+<!-- SETUP -->
+<div id="setup">
+  <h1>⚡ ADMIN</h1>
+  <p>Connecte l'admin au même Apps Script que le kiosk.</p>
+  <label>URL APPS SCRIPT</label>
+  <input id="api-url-input" type="text" placeholder="https://script.google.com/macros/s/..." />
+  <label style="margin-top:6px">CLIENT ID SPOTIFY (optionnel — pour ajouter à la queue)</label>
+  <input id="client-id-input" type="text" placeholder="4b3e1f2d8c..." />
+  <button class="btn" onclick="setup()" style="margin-top:8px">Lancer →</button>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+  <header>
+    <h1>⚡ DJ ADMIN</h1>
+    <div class="now-playing">
+      <div class="dot"></div>
+      <span id="np-text">—</span>
+    </div>
+    <div class="stats">
+      <div class="stat pending"><div class="val" id="stat-p">0</div><div class="lbl">EN ATTENTE</div></div>
+      <div class="stat approved"><div class="val" id="stat-a">0</div><div class="lbl">APPROUVÉS</div></div>
+      <div class="stat refused"><div class="val" id="stat-r">0</div><div class="lbl">REFUSÉS</div></div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Spotify auth strip -->
+    <div class="auth-strip">
+      <div class="sp-status" id="sp-status">⚠ Spotify non connecté — l'ajout à la queue sera simulé</div>
+      <button class="btn outline" id="sp-btn" onclick="authSpotify()" style="padding:7px 14px;font-size:0.7rem">Connecter Spotify</button>
+    </div>
+
+    <div class="toolbar">
+      <button class="btn outline" onclick="clearAll()" style="font-size:0.7rem;padding:8px 14px">🗑 Tout effacer</button>
+    </div>
+
+    <div class="section-label">⏳ Demandes en attente</div>
+    <div id="pending-list"><div class="empty">Aucune demande</div></div>
+
+    <div class="section-label" style="margin-top:32px">✓ Historique</div>
+    <div id="history-list"><div class="empty">Aucun historique</div></div>
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const STATE = { apiUrl: null, spToken: null, spClientId: null, all: [] };
+
+// ── INIT ──
+window.addEventListener('DOMContentLoaded', () => {
+  const hash = window.location.hash;
+  if (hash.includes('access_token')) {
+    const p = new URLSearchParams(hash.slice(1));
+    STATE.spToken = p.get('access_token');
+    STATE.apiUrl = localStorage.getItem('admin_api_url');
+    STATE.spClientId = localStorage.getItem('admin_sp_cid');
+    history.replaceState(null,'',location.pathname);
+    launch();
+    return;
+  }
+  const savedApi = localStorage.getItem('admin_api_url');
+  const savedToken = localStorage.getItem('admin_sp_token');
+  if (savedApi) {
+    document.getElementById('api-url-input').value = savedApi;
+    if (savedToken) {
+      STATE.apiUrl = savedApi;
+      STATE.spToken = savedToken;
+      STATE.spClientId = localStorage.getItem('admin_sp_cid');
+      launch();
+      return;
+    }
+  }
+  const savedCid = localStorage.getItem('admin_sp_cid');
+  if (savedCid) document.getElementById('client-id-input').value = savedCid;
+});
+
+function setup() {
+  const apiUrl = document.getElementById('api-url-input').value.trim();
+  const cid    = document.getElementById('client-id-input').value.trim();
+  if (!apiUrl) { toast('Entre l\'URL Apps Script'); return; }
+
+  localStorage.setItem('admin_api_url', apiUrl);
+  STATE.apiUrl = apiUrl;
+
+  if (cid) {
+    localStorage.setItem('admin_sp_cid', cid);
+    STATE.spClientId = cid;
+  }
+
+  launch();
+}
+
+function launch() {
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+
+  if (STATE.spToken) {
+    localStorage.setItem('admin_sp_token', STATE.spToken);
+    document.getElementById('sp-status').textContent = '✓ Spotify connecté';
+    document.getElementById('sp-status').classList.add('ok');
+    document.getElementById('sp-btn').textContent = 'Reconnecté';
+    fetchNowPlaying();
+    setInterval(fetchNowPlaying, 6000);
+  }
+
+  poll();
+  setInterval(poll, 3000);
+}
+
+// ── SPOTIFY AUTH ──
+function authSpotify() {
+  const cid = document.getElementById('client-id-input')?.value.trim() || STATE.spClientId;
+  if (!cid) { toast('Entre le Client ID Spotify dans la config'); return; }
+  localStorage.setItem('admin_sp_cid', cid);
+  const redirect = location.href.split('?')[0].split('#')[0];
+  const scopes = 'user-read-currently-playing user-read-playback-state user-modify-playback-state';
+  location.href = `https://accounts.spotify.com/authorize?client_id=${cid}&response_type=token&redirect_uri=${encodeURIComponent(redirect)}&scope=${encodeURIComponent(scopes)}`;
+}
+
+async function fetchNowPlaying() {
+  if (!STATE.spToken) return;
+  const r = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
+    headers: { 'Authorization': `Bearer ${STATE.spToken}` }
+  });
+  if (r.status === 200) {
+    const d = await r.json();
+    if (d?.item) document.getElementById('np-text').textContent = `${d.item.name} — ${d.item.artists.map(a=>a.name).join(', ')}`;
+  } else if (r.status === 401) {
+    STATE.spToken = null;
+    localStorage.removeItem('admin_sp_token');
+    document.getElementById('sp-status').textContent = '⚠ Session Spotify expirée';
+    document.getElementById('sp-status').classList.remove('ok');
+  }
+}
+
+// ── POLL ──
+async function poll() {
+  try {
+    const r = await fetch(STATE.apiUrl + '?action=list');
+    const rows = await r.json();
+    STATE.all = rows;
+    render();
+  } catch(e) { console.error(e); }
+}
+
+function render() {
+  const pending  = STATE.all.filter(r => r.status === 'pending');
+  const history  = STATE.all.filter(r => r.status !== 'pending');
+
+  document.getElementById('stat-p').textContent = pending.length;
+  document.getElementById('stat-a').textContent = history.filter(r=>r.status==='approved').length;
+  document.getElementById('stat-r').textContent = history.filter(r=>r.status==='refused').length;
+
+  // Pending
+  const pel = document.getElementById('pending-list');
+  if (!pending.length) {
+    pel.innerHTML = '<div class="empty">Aucune demande en attente 🎉</div>';
+  } else {
+    pel.innerHTML = pending.map(r => `
+      <div class="admin-card" id="card-${r.id}">
+        <img src="${r.img}" alt="">
+        <div class="info">
+          <div class="name">${r.name}</div>
+          <div class="artist">${r.artist}</div>
+          <div class="ts">demandé à ${r.ts}</div>
+        </div>
+        <div class="actions">
+          <button class="btn-approve" onclick="approve('${r.id}','${esc(r.uri)}','${esc(r.name)}')">✓ APPROUVER</button>
+          <button class="btn-refuse" onclick="refuse('${r.id}')">✕ REFUSER</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // History
+  const hel = document.getElementById('history-list');
+  if (!history.length) {
+    hel.innerHTML = '<div class="empty">Aucun historique</div>';
+  } else {
+    hel.innerHTML = history.reverse().map(r => `
+      <div class="admin-card ${r.status}">
+        <img src="${r.img}" alt="">
+        <div class="info">
+          <div class="name">${r.name}</div>
+          <div class="artist">${r.artist}</div>
+          <div class="ts">${r.ts}</div>
+        </div>
+        <span class="badge ${r.status}">${r.status === 'approved' ? 'APPROUVÉ' : 'REFUSÉ'}</span>
+      </div>
+    `).join('');
+  }
+}
+
+// ── ACTIONS ──
+async function approve(id, uri, name) {
+  // Add to Spotify queue
+  if (STATE.spToken) {
+    const r = await fetch(`https://api.spotify.com/v1/me/player/queue?uri=${encodeURIComponent(uri)}`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${STATE.spToken}` }
+    });
+    if (!r.ok && r.status !== 204) {
+      toast('❌ Erreur Spotify — vérifie qu\'un appareil est actif');
+    } else {
+      toast(`🎵 "${name}" ajouté à la queue Spotify !`);
+    }
+  } else {
+    toast(`✓ Approuvé (Spotify non connecté)`);
+  }
+
+  await apiFetch({ action:'updateStatus', id, status:'approved' });
+  poll();
+}
+
+async function refuse(id) {
+  await apiFetch({ action:'updateStatus', id, status:'refused' });
+  toast('✕ Demande refusée');
+  poll();
+}
+
+async function clearAll() {
+  if (!confirm('Effacer tout l\'historique de la Sheet ?')) return;
+  await apiFetch({ action:'clear' });
+  toast('🗑 Effacé');
+  poll();
+}
+
+// ── API ──
+async function apiFetch(body) {
+  try {
+    const r = await fetch(STATE.apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(body)
+    });
+    return r.json();
+  } catch(e) { console.error(e); return null; }
+}
+
+function esc(s) { return (s||'').replace(/'/g,"\\'"); }
+
+// ── TOAST ──
+let tt;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(tt);
+  tt = setTimeout(() => el.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
