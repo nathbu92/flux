@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flux — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#080808;--surface:#111;--surface2:#181818;--border:#222;
+  --green:#1DB954;--amber:#ffab00;--red:#ef4444;--purple:#7c3aed;
+  --text:#f0f0f0;--muted:#555;
+  --mono:'Space Mono',monospace;--sans:'DM Sans',sans-serif;--display:'Bebas Neue',sans-serif;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;display:flex;flex-direction:column;}
+
+/* LOGIN */
+#login{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:14px;padding:32px;}
+#login .logo{font-family:var(--display);font-size:3rem;color:var(--amber);letter-spacing:4px;}
+#login p{color:var(--muted);font-size:0.73rem;font-family:var(--mono);letter-spacing:1px;}
+#login input{width:100%;max-width:340px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:12px 16px;color:var(--text);font-family:var(--mono);font-size:0.85rem;outline:none;text-align:center;letter-spacing:2px;transition:border-color .2s;}
+#login input:focus{border-color:var(--amber);}
+#login input::placeholder{letter-spacing:1px;}
+#login label{font-size:0.6rem;color:var(--muted);letter-spacing:2px;font-family:var(--mono);}
+.err{color:var(--red);font-size:0.72rem;font-family:var(--mono);display:none;}
+.btn{background:var(--amber);color:#000;border:none;border-radius:4px;padding:12px 28px;font-family:var(--mono);font-size:0.8rem;font-weight:700;cursor:pointer;transition:opacity .2s;letter-spacing:1px;}
+.btn:hover{opacity:.85;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn.danger{background:var(--red);color:#fff;}
+.btn.outline{background:transparent;border:1px solid var(--border);color:var(--muted);}
+.btn.outline:hover{border-color:var(--amber);color:var(--amber);}
+.btn.green{background:var(--green);color:#000;}
+.btn.green:hover{opacity:.85;}
+
+/* HEADER */
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;flex-wrap:wrap;gap:10px;}
+.brand{font-family:var(--display);font-size:1.6rem;color:var(--amber);letter-spacing:2px;}
+.session-info{font-size:0.62rem;color:var(--muted);font-family:var(--mono);letter-spacing:1px;margin-top:2px;}
+.stats{display:flex;gap:24px;}
+.stat{text-align:center;}
+.stat .val{font-family:var(--display);font-size:1.4rem;}
+.stat .lbl{font-size:0.55rem;color:var(--muted);letter-spacing:1px;font-family:var(--mono);}
+.stat.p .val{color:var(--amber);}
+.stat.a .val{color:var(--green);}
+.stat.r .val{color:var(--red);}
+.now-playing{display:flex;align-items:center;gap:8px;max-width:220px;}
+.now-playing .dot{width:6px;height:6px;background:var(--green);border-radius:50%;flex-shrink:0;animation:pulse 1.6s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.2;transform:scale(.5)}}
+.np-text{font-size:0.68rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* SPOTIFY BUTTON */
+.sp-pill{display:flex;align-items:center;gap:7px;background:transparent;border:1px solid var(--border);border-radius:4px;padding:7px 12px;font-family:var(--mono);font-size:0.65rem;color:var(--muted);cursor:pointer;transition:border-color .2s,color .2s;}
+.sp-pill:hover{border-color:var(--green);color:var(--green);}
+.sp-pill.connected{border-color:var(--green);color:var(--green);}
+.sp-dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0;}
+
+/* MAIN */
+main{flex:1;max-width:860px;width:100%;margin:0 auto;padding:28px 20px;}
+.section-label{font-size:0.6rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid var(--border);padding-bottom:6px;margin-bottom:14px;}
+.toolbar{display:flex;gap:10px;margin-bottom:20px;align-items:center;flex-wrap:wrap;}
+.toolbar .spacer{flex:1;}
+
+/* CARDS */
+#pending-list,#history-list{display:flex;flex-direction:column;gap:10px;margin-bottom:32px;}
+.admin-card{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:14px 16px;display:flex;align-items:center;gap:14px;animation:slideIn .3s ease;}
+@keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.admin-card.approved{border-color:rgba(29,185,84,.3);}
+.admin-card.refused{opacity:.5;}
+.admin-card img{width:50px;height:50px;border-radius:3px;object-fit:cover;flex-shrink:0;}
+.admin-card .info{flex:1;overflow:hidden;}
+.admin-card .name{font-size:0.88rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.admin-card .artist{font-size:0.72rem;color:var(--muted);margin-top:2px;}
+.admin-card .ts{font-size:0.62rem;color:var(--muted);margin-top:4px;font-family:var(--mono);letter-spacing:1px;}
+.actions{display:flex;gap:8px;flex-shrink:0;}
+.btn-approve,.btn-refuse{border:none;border-radius:3px;padding:9px 16px;font-family:var(--mono);font-size:0.7rem;font-weight:700;cursor:pointer;transition:opacity .15s;}
+.btn-approve{background:var(--green);color:#000;}
+.btn-refuse{background:var(--red);color:#fff;}
+.btn-approve:hover,.btn-refuse:hover{opacity:.8;}
+.btn-approve:disabled,.btn-refuse:disabled{opacity:.3;cursor:not-allowed;}
+.badge{font-size:0.6rem;padding:3px 8px;border-radius:2px;flex-shrink:0;font-weight:700;letter-spacing:.5px;font-family:var(--mono);}
+.badge.approved{background:var(--green);color:#000;}
+.badge.refused{background:#252525;color:var(--muted);}
+.empty{color:var(--muted);font-size:0.75rem;text-align:center;padding:24px 0;font-family:var(--mono);}
+
+/* TOAST */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(50px);background:var(--surface2);border:1px solid var(--amber);color:var(--text);padding:10px 22px;border-radius:4px;font-size:0.75rem;font-family:var(--mono);transition:transform .3s,opacity .3s;opacity:0;z-index:999;}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--border)}
+
+/* TABS */
+.tabs{display:flex;gap:0;border:1px solid var(--border);border-radius:4px;overflow:hidden;width:100%;max-width:340px;}
+.tab{flex:1;background:transparent;border:none;color:var(--muted);font-family:var(--mono);font-size:0.72rem;font-weight:700;letter-spacing:2px;padding:10px;cursor:pointer;transition:background .2s,color .2s;}
+.tab.active{background:var(--amber);color:#000;}
+.tab:hover:not(.active){color:var(--amber);}
+#panel-join,#panel-create{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;}
+#panel-join input,#panel-create input{width:100%;max-width:340px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:12px 16px;color:var(--text);font-family:var(--mono);font-size:0.85rem;outline:none;text-align:center;letter-spacing:2px;transition:border-color .2s;}
+#panel-join input:focus,#panel-create input:focus{border-color:var(--amber);}
+#panel-join .btn,#panel-create .btn{width:100%;max-width:340px;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="logo">⚡ ADMIN</div>
+  <p>ACCÈS RÉSERVÉ AU DJ</p>
+  <div class="tabs">
+    <button class="tab active" id="tab-join" onclick="switchTab('join')">REJOINDRE</button>
+    <button class="tab" id="tab-create" onclick="switchTab('create')">CRÉER</button>
+  </div>
+  <div id="panel-join">
+    <label>CODE DE LA SESSION</label>
+    <input id="j-code" type="text" placeholder="FIESTA24" maxlength="20"
+           oninput="this.value=this.value.toUpperCase()"
+           onkeydown="if(event.key==='Enter')document.getElementById('j-pass').focus()"/>
+    <label style="margin-top:4px">MOT DE PASSE</label>
+    <input id="j-pass" type="password" placeholder="••••••••"
+           onkeydown="if(event.key==='Enter')doJoin()"/>
+    <div class="err" id="j-err"></div>
+    <button class="btn" id="join-btn" onclick="doJoin()">ENTRER →</button>
+  </div>
+  <div id="panel-create" style="display:none">
+    <label>CODE DE LA SESSION</label>
+    <input id="c-code" type="text" placeholder="FIESTA24" maxlength="20"
+           oninput="this.value=this.value.toUpperCase()"
+           onkeydown="if(event.key==='Enter')document.getElementById('c-name').focus()"/>
+    <label style="margin-top:4px">NOM DE LA SOIRÉE</label>
+    <input id="c-name" type="text" placeholder="Fiesta de Pablo"
+           onkeydown="if(event.key==='Enter')document.getElementById('c-pass').focus()"/>
+    <label style="margin-top:4px">MOT DE PASSE</label>
+    <input id="c-pass" type="password" placeholder="••••••••"
+           onkeydown="if(event.key==='Enter')doCreate()"/>
+    <div class="err" id="c-err"></div>
+    <button class="btn" id="create-btn" onclick="doCreate()">CRÉER →</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none;flex-direction:column;min-height:100vh;">
+  <header>
+    <div>
+      <div class="brand">⚡ FLUX ADMIN</div>
+      <div class="session-info" id="session-info">SESSION —</div>
+    </div>
+    <div class="stats">
+      <div class="stat p"><div class="val" id="st-p">0</div><div class="lbl">ATTENTE</div></div>
+      <div class="stat a"><div class="val" id="st-a">0</div><div class="lbl">APPROUVÉS</div></div>
+      <div class="stat r"><div class="val" id="st-r">0</div><div class="lbl">REFUSÉS</div></div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+      <div class="now-playing">
+        <div class="dot"></div>
+        <div class="np-text" id="np-text">—</div>
+      </div>
+      <button class="sp-pill" id="sp-btn" onclick="handleSpotifyClick()">
+        <span class="sp-dot"></span>
+        <span id="sp-label">Connecter Spotify</span>
+      </button>
+      <button class="sp-pill" onclick="logout()" style="border-color:var(--red);color:var(--red);margin-top:2px;" title="Quitter la session"><span style="font-size:0.75rem">⏻</span> Déconnexion</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="toolbar">
+      <button class="btn outline" onclick="clearAll()" style="font-size:0.68rem;padding:8px 14px">🗑 Effacer tout</button>
+      <div class="spacer"></div>
+    </div>
+
+    <div class="section-label">⏳ En attente d'approbation</div>
+    <div id="pending-list"><div class="empty">Aucune demande 🎉</div></div>
+
+    <div class="section-label">✓ Historique</div>
+    <div id="history-list"><div class="empty">Aucun historique</div></div>
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API         = 'https://script.google.com/macros/s/AKfycbx3yHZzVOFIfwCqgcs_zNnjIgMAZFIsD911F32YDzSUpa4SU2-ptMqAdEP0E495Aqjb9w/exec';
+const SP_CLIENT_ID = 'ec90e6d275e4450cb50b7926e8a3ff10';
+const REDIRECT_URI = 'https://nathbu92.github.io/flux';
+
+const S = { session: null, sessionName: null };
+
+// ── INIT ──
+window.addEventListener('DOMContentLoaded', async () => {
+  const params = new URLSearchParams(location.search);
+  if (params.get('code')) {
+    await handleSpotifyCallback(params.get('code'));
+    return;
+  }
+  // Auto-login via token sauvegardé
+  const saved = JSON.parse(localStorage.getItem('flux_session') || 'null');
+  if (saved?.code && saved?.token && saved.token === btoa(saved.code + ':' + saved.pass)) {
+    S.session = saved.code; S.sessionName = saved.name;
+    launchApp();
+    return;
+  }
+  if (saved?.code) document.getElementById('j-code').value = saved.code;
+});
+
+// ── TABS ──
+function switchTab(tab) {
+  const isJoin = tab === 'join';
+  document.getElementById('panel-join').style.display   = isJoin ? 'flex' : 'none';
+  document.getElementById('panel-create').style.display = isJoin ? 'none' : 'flex';
+  document.getElementById('tab-join').classList.toggle('active', isJoin);
+  document.getElementById('tab-create').classList.toggle('active', !isJoin);
+  document.getElementById(isJoin ? 'j-err' : 'c-err').style.display = 'none';
+}
+
+// ── REJOINDRE ──
+async function doJoin() {
+  const code = document.getElementById('j-code').value.trim().toUpperCase();
+  const pass = document.getElementById('j-pass').value.trim();
+  const btn  = document.getElementById('join-btn');
+  const err  = document.getElementById('j-err');
+  err.style.display = 'none';
+  if (!code || !pass) { err.textContent = 'Remplis les deux champs'; err.style.display='block'; return; }
+  btn.disabled = true; btn.textContent = '...';
+  try {
+    const res = await apiFetch({ action: 'validateSession', code, password: pass });
+    if (res.ok) {
+      S.session = code; S.sessionName = res.name;
+      // Sauvegarder avec token d'auto-login
+      localStorage.setItem('flux_session', JSON.stringify({
+        code, name: res.name, pass,
+        token: btoa(code + ':' + pass)
+      }));
+      launchApp();
+    } else {
+      err.textContent = res.error || 'Code ou mot de passe incorrect';
+      err.style.display = 'block';
+    }
+  } catch(e) {
+    err.textContent = 'Erreur réseau'; err.style.display='block';
+  } finally {
+    btn.disabled = false; btn.textContent = 'ENTRER →';
+  }
+}
+
+// ── CRÉER ──
+async function doCreate() {
+  const code = document.getElementById('c-code').value.trim().toUpperCase();
+  const name = document.getElementById('c-name').value.trim();
+  const pass = document.getElementById('c-pass').value.trim();
+  const btn  = document.getElementById('create-btn');
+  const err  = document.getElementById('c-err');
+  err.style.display = 'none';
+  if (!code || !pass || !name) { err.textContent = 'Remplis tous les champs'; err.style.display='block'; return; }
+  btn.disabled = true; btn.textContent = '...';
+  try {
+    const res = await apiFetch({ action: 'createSession', code, password: pass, name });
+    if (res.ok) {
+      S.session = code; S.sessionName = name;
+      localStorage.setItem('flux_session', JSON.stringify({
+        code, name, pass,
+        token: btoa(code + ':' + pass)
+      }));
+      const sp = JSON.parse(localStorage.getItem('flux_sp') || 'null');
+      if (sp) await apiFetch({ action: 'saveTokens', code, access_token: sp.access, refresh_token: sp.refresh, expiry: sp.expiry });
+      launchApp();
+      toast('✨ Session créée !');
+    } else {
+      err.textContent = res.error || 'Erreur inconnue';
+      err.style.display = 'block';
+    }
+  } catch(e) {
+    err.textContent = 'Erreur réseau'; err.style.display='block';
+  } finally {
+    btn.disabled = false; btn.textContent = 'CRÉER →';
+  }
+}
+
+// ── APP ──
+function launchApp() {
+  document.getElementById('login').style.display = 'none';
+  const app = document.getElementById('app');
+  app.style.display = 'flex';
+  document.getElementById('session-info').textContent = `SESSION ${S.session} — ${S.sessionName}`;
+  updateSpBtn();
+  poll();
+  setInterval(poll, 3000);
+  pollNP();
+  setInterval(pollNP, 6000);
+}
+
+// ── SPOTIFY ──
+async function connectSpotify() {
+  const verifier  = generateVerifier(64);
+  const challenge = await generateChallenge(verifier);
+  localStorage.setItem('pkce_verifier', verifier);
+  const scopes = 'user-read-currently-playing user-read-playback-state user-modify-playback-state user-read-private';
+  location.href = `https://accounts.spotify.com/authorize`
+    + `?client_id=${SP_CLIENT_ID}`
+    + `&response_type=code`
+    + `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`
+    + `&scope=${encodeURIComponent(scopes)}`
+    + `&code_challenge_method=S256`
+    + `&code_challenge=${challenge}`;
+}
+
+async function handleSpotifyCallback(authCode) {
+  const verifier = localStorage.getItem('pkce_verifier');
+  const session  = JSON.parse(localStorage.getItem('flux_session') || 'null');
+  try {
+    const r = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: SP_CLIENT_ID,
+        grant_type: 'authorization_code',
+        code: authCode,
+        redirect_uri: REDIRECT_URI,
+        code_verifier: verifier
+      })
+    });
+    const d = await r.json();
+    if (!d.access_token) { history.replaceState(null,'',location.pathname); return; }
+
+    const expiry = Date.now() + (d.expires_in * 1000) - 60000;
+    let spName = 'Spotify';
+    try {
+      const me  = await fetch('https://api.spotify.com/v1/me', { headers: { 'Authorization': 'Bearer ' + d.access_token } });
+      if (me.ok) { const meD = await me.json(); spName = meD.display_name || spName; }
+    } catch(e) {}
+    const meD = { display_name: spName };
+
+    localStorage.setItem('flux_sp', JSON.stringify({
+      access: d.access_token, refresh: d.refresh_token, expiry, name: spName
+    }));
+
+    if (session?.code) {
+      await apiFetch({ action: 'saveTokens', code: session.code, access_token: d.access_token, refresh_token: d.refresh_token, expiry });
+      S.session = session.code; S.sessionName = session.name || session.code;
+    }
+
+    history.replaceState(null, '', location.pathname);
+
+    if (S.session) {
+      launchApp();
+      toast('🎵 Spotify connecté : ' + meD.display_name);
+    } else {
+      // Pas de session connue → montrer login avec status Spotify
+      if (session?.code) document.getElementById('j-code').value = session.code;
+      const jErr = document.getElementById('j-err');
+      jErr.textContent = '✅ Spotify connecté. Entre ton code de session.';
+      jErr.style.color = 'var(--green)'; jErr.style.display = 'block';
+    }
+  } catch(e) {
+    console.error('Spotify callback error:', e);
+    history.replaceState(null, '', location.pathname);
+  }
+}
+
+function updateSpBtn() {
+  const sp  = JSON.parse(localStorage.getItem('flux_sp') || 'null');
+  const btn = document.getElementById('sp-btn');
+  const lbl = document.getElementById('sp-label');
+  if (sp) {
+    btn.classList.add('connected');
+    lbl.textContent = '✓ ' + (sp.name || 'Spotify connecté');
+  } else {
+    btn.classList.remove('connected');
+    lbl.textContent = 'Connecter Spotify';
+  }
+}
+
+function generateVerifier(len) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+  return Array.from(crypto.getRandomValues(new Uint8Array(len))).map(b => chars[b % chars.length]).join('');
+}
+async function generateChallenge(verifier) {
+  const data   = new TextEncoder().encode(verifier);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  return btoa(String.fromCharCode(...new Uint8Array(digest))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+
+// ── POLLING ──
+async function pollNP() {
+  try {
+    const r = await fetch(`${API}?action=nowplaying&session=${S.session}`);
+    const d = await r.json();
+    document.getElementById('np-text').textContent = d.playing ? `${d.name} — ${d.artist}` : '—';
+  } catch(e) {}
+}
+
+async function poll() {
+  try {
+    const r    = await fetch(`${API}?action=list&session=${S.session}`);
+    const rows = await r.json();
+    const pending = rows.filter(r => r.status === 'pending');
+    const history = rows.filter(r => r.status !== 'pending');
+    document.getElementById('st-p').textContent = pending.length;
+    document.getElementById('st-a').textContent = history.filter(r=>r.status==='approved').length;
+    document.getElementById('st-r').textContent = history.filter(r=>r.status==='refused').length;
+    renderPending(pending);
+    renderHistory(history);
+  } catch(e) {}
+}
+
+function renderPending(rows) {
+  const el = document.getElementById('pending-list');
+  if (!rows.length) { el.innerHTML = '<div class="empty">Aucune demande en attente 🎉</div>'; return; }
+  el.innerHTML = rows.map(r => `
+    <div class="admin-card" id="c-${r.id}">
+      <img src="${r.img}" alt="">
+      <div class="info">
+        <div class="name">${r.name}</div>
+        <div class="artist">${r.artist}</div>
+        <div class="ts">demandé à ${r.ts}</div>
+      </div>
+      <div class="actions">
+        <button class="btn-approve" onclick="approve('${r.id}','${r.uri.replace(/'/g,"\\'")}','${r.name.replace(/'/g,"\\'")}')">✓ APPROUVER</button>
+        <button class="btn-refuse"  onclick="refuse('${r.id}')">✕ REFUSER</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderHistory(rows) {
+  const el = document.getElementById('history-list');
+  if (!rows.length) { el.innerHTML = '<div class="empty">Aucun historique</div>'; return; }
+  el.innerHTML = [...rows].reverse().map(r => `
+    <div class="admin-card ${r.status}">
+      <img src="${r.img}" alt="">
+      <div class="info">
+        <div class="name">${r.name}</div>
+        <div class="artist">${r.artist}</div>
+        <div class="ts">${r.ts}</div>
+      </div>
+      <span class="badge ${r.status}">${r.status==='approved'?'APPROUVÉ':'REFUSÉ'}</span>
+    </div>
+  `).join('');
+}
+
+async function approve(id, uri, name) {
+  document.querySelectorAll(`#c-${id} button`).forEach(b => b.disabled = true);
+  try {
+    await apiFetch({ action: 'addToQueue',    session: S.session, uri });
+    await apiFetch({ action: 'updateStatus',  session: S.session, id, status: 'approved' });
+    toast(`🎵 "${name}" ajouté à la queue !`);
+    poll();
+  } catch(e) { toast('Erreur'); }
+}
+
+async function refuse(id) {
+  await apiFetch({ action: 'updateStatus', session: S.session, id, status: 'refused' });
+  toast('✕ Refusé');
+  poll();
+}
+
+async function clearAll() {
+  if (!confirm('Effacer tout l\'historique de la session ?')) return;
+  await apiFetch({ action: 'clear', session: S.session });
+  toast('🗑 Effacé');
+  poll();
+}
+
+// ── HELPERS ──
+async function apiFetch(body) {
+  const r    = await fetch(API, { method:'POST', headers:{'Content-Type':'text/plain'}, body: JSON.stringify(body) });
+  const text = await r.text();
+  try { return JSON.parse(text); }
+  catch(e) {
+    console.error('Apps Script a retourné du HTML — redéploie le script.', text.slice(0,120));
+    return { error: 'Serveur indisponible — redéploie le Apps Script' };
+  }
+}
+
+function handleSpotifyClick() {
+  const sp = JSON.parse(localStorage.getItem("flux_sp") || "null");
+  if (sp) {
+    if (!confirm("Déconnecter Spotify ?")) return;
+    localStorage.removeItem("flux_sp");
+    localStorage.removeItem("pkce_verifier");
+    updateSpBtn();
+    toast("Spotify déconnecté");
+  } else { connectSpotify(); }
+}
+function logout() {
+  if (!confirm("Quitter la session ?")) return;
+  localStorage.removeItem("flux_session");
+  S.session = null; S.sessionName = null;
+  location.reload();
+}
+
+function showErr(msg) {}
+function hideErr()    {}
+
+let tt;
+function toast(msg) {
+  const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show');
+  clearTimeout(tt); tt=setTimeout(()=>el.classList.remove('show'),3000);
+}
+</script>
+</body>
+</html>
