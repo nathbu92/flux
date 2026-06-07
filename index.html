@@ -291,7 +291,7 @@ async function connectSpotify() {
   const verifier  = generateVerifier(64);
   const challenge = await generateChallenge(verifier);
   localStorage.setItem('pkce_verifier', verifier);
-  const scopes = 'user-read-currently-playing user-read-playback-state user-modify-playback-state';
+  const scopes = 'user-read-currently-playing user-read-playback-state user-modify-playback-state user-read-private';
   location.href = `https://accounts.spotify.com/authorize`
     + `?client_id=${SP_CLIENT_ID}`
     + `&response_type=code`
@@ -320,11 +320,15 @@ async function handleSpotifyCallback(authCode) {
     if (!d.access_token) { history.replaceState(null,'',location.pathname); return; }
 
     const expiry = Date.now() + (d.expires_in * 1000) - 60000;
-    const me   = await fetch('https://api.spotify.com/v1/me', { headers: { 'Authorization': 'Bearer ' + d.access_token } });
-    const meD  = await me.json();
+    let spName = 'Spotify';
+    try {
+      const me  = await fetch('https://api.spotify.com/v1/me', { headers: { 'Authorization': 'Bearer ' + d.access_token } });
+      if (me.ok) { const meD = await me.json(); spName = meD.display_name || spName; }
+    } catch(e) {}
+    const meD = { display_name: spName };
 
     localStorage.setItem('flux_sp', JSON.stringify({
-      access: d.access_token, refresh: d.refresh_token, expiry, name: meD.display_name
+      access: d.access_token, refresh: d.refresh_token, expiry, name: spName
     }));
 
     if (session?.code) {
@@ -456,8 +460,13 @@ async function clearAll() {
 
 // ── HELPERS ──
 async function apiFetch(body) {
-  const r = await fetch(API, { method:'POST', headers:{'Content-Type':'text/plain'}, body: JSON.stringify(body) });
-  return r.json();
+  const r    = await fetch(API, { method:'POST', headers:{'Content-Type':'text/plain'}, body: JSON.stringify(body) });
+  const text = await r.text();
+  try { return JSON.parse(text); }
+  catch(e) {
+    console.error('Apps Script a retourné du HTML — redéploie le script.', text.slice(0,120));
+    return { error: 'Serveur indisponible — redéploie le Apps Script' };
+  }
 }
 
 function showErr(msg) {}
