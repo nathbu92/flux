@@ -401,11 +401,18 @@ async function poll() {
   } catch(e) {}
 }
 
+const REQ_MAP = {};
+
 function renderPending(rows) {
   const el = document.getElementById('pending-list');
   if (!rows.length) { el.innerHTML = '<div class="empty">Aucune demande en attente 🎉</div>'; return; }
-  el.innerHTML = rows.map(r => `
-    <div class="admin-card" id="c-${r.id}">
+  el.innerHTML = '';
+  rows.forEach(r => {
+    REQ_MAP[r.id] = r;
+    const div = document.createElement('div');
+    div.className = 'admin-card';
+    div.id = 'c-' + r.id;
+    div.innerHTML = `
       <img src="${r.img}" alt="">
       <div class="info">
         <div class="name">${r.name}</div>
@@ -413,11 +420,19 @@ function renderPending(rows) {
         <div class="ts">demandé à ${r.ts}</div>
       </div>
       <div class="actions">
-        <button class="btn-approve" onclick="approve('${r.id}','${r.uri.replace(/'/g,"\\'")}','${r.name.replace(/'/g,"\\'")}')">✓ APPROUVER</button>
-        <button class="btn-refuse"  onclick="refuse('${r.id}')">✕ REFUSER</button>
+        <button class="btn-approve" data-id="${r.id}">✓ APPROUVER</button>
+        <button class="btn-refuse"  data-id="${r.id}">✕ REFUSER</button>
       </div>
-    </div>
-  `).join('');
+    `;
+    div.querySelector('.btn-approve').addEventListener('click', function() {
+      const req = REQ_MAP[r.id];
+      approve(r.id, req.uri, req.name);
+    });
+    div.querySelector('.btn-refuse').addEventListener('click', function() {
+      refuse(r.id);
+    });
+    el.appendChild(div);
+  });
 }
 
 function renderHistory(rows) {
@@ -439,11 +454,19 @@ function renderHistory(rows) {
 async function approve(id, uri, name) {
   document.querySelectorAll(`#c-${id} button`).forEach(b => b.disabled = true);
   try {
-    await apiFetch({ action: 'addToQueue',    session: S.session, uri });
-    await apiFetch({ action: 'updateStatus',  session: S.session, id, status: 'approved' });
-    toast(`🎵 "${name}" ajouté à la queue !`);
+    const qRes = await apiFetch({ action: 'addToQueue', session: S.session, uri });
+    console.log('addToQueue response:', JSON.stringify(qRes));
+    if (qRes.error) {
+      toast('⚠️ Spotify : ' + qRes.error + ' (approuvé quand même)');
+    } else if (qRes.ok) {
+      toast(`🎵 "${name}" ajouté à Spotify !`);
+    } else {
+      toast(`⚠️ Réponse inattendue Spotify`);
+      console.warn('unexpected qRes:', qRes);
+    }
+    await apiFetch({ action: 'updateStatus', session: S.session, id, status: 'approved' });
     poll();
-  } catch(e) { toast('Erreur'); }
+  } catch(e) { console.error(e); toast('Erreur réseau'); }
 }
 
 async function refuse(id) {
