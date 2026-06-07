@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flux — Kiosk</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#080808;--surface:#111;--surface2:#181818;--border:#222;
+  --green:#1DB954;--green-dim:rgba(29,185,84,.1);--amber:#ffab00;
+  --text:#f0f0f0;--muted:#555;--red:#ef4444;
+  --mono:'Space Mono',monospace;--sans:'DM Sans',sans-serif;--display:'Bebas Neue',sans-serif;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;display:flex;flex-direction:column;}
+
+/* LOGIN */
+#login{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:14px;padding:32px;}
+#login .logo{font-family:var(--display);font-size:3.5rem;color:var(--green);letter-spacing:4px;}
+#login p{color:var(--muted);font-size:0.75rem;font-family:var(--mono);letter-spacing:1px;}
+#login input{width:100%;max-width:340px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:12px 16px;color:var(--text);font-family:var(--mono);font-size:0.85rem;outline:none;text-align:center;letter-spacing:3px;transition:border-color .2s;}
+#login input:focus{border-color:var(--green);}
+#login input::placeholder{letter-spacing:1px;}
+#login label{font-size:0.6rem;color:var(--muted);letter-spacing:2px;font-family:var(--mono);}
+#login .err{color:var(--red);font-size:0.72rem;font-family:var(--mono);display:none;}
+.btn{background:var(--green);color:#000;border:none;border-radius:4px;padding:12px 28px;font-family:var(--mono);font-size:0.8rem;font-weight:700;cursor:pointer;transition:opacity .2s;letter-spacing:1px;}
+.btn:hover{opacity:.85;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* HEADER */
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;flex-shrink:0;}
+.brand{font-family:var(--display);font-size:1.6rem;color:var(--green);letter-spacing:2px;}
+.session-badge{font-size:0.6rem;color:var(--muted);font-family:var(--mono);letter-spacing:2px;}
+.now-playing{display:flex;align-items:center;gap:8px;max-width:260px;overflow:hidden;}
+.now-playing .dot{width:6px;height:6px;background:var(--green);border-radius:50%;flex-shrink:0;animation:pulse 1.6s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.2;transform:scale(.5)}}
+.np-text{font-size:0.7rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* MAIN */
+main{flex:1;max-width:620px;width:100%;margin:0 auto;padding:28px 20px;}
+
+/* SEARCH */
+.search-wrap{position:relative;margin-bottom:14px;}
+.search-wrap input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:14px 50px 14px 18px;color:var(--text);font-family:var(--mono);font-size:0.88rem;outline:none;transition:border-color .2s;}
+.search-wrap input:focus{border-color:var(--green);}
+.search-wrap input::placeholder{color:var(--muted);}
+.search-wrap button{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:var(--green);border:none;border-radius:3px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1rem;color:#000;transition:opacity .2s;}
+.search-wrap button:hover{opacity:.8;}
+
+/* TRACK CARD */
+#results{display:flex;flex-direction:column;gap:6px;margin-bottom:28px;}
+.track{display:flex;align-items:center;gap:12px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:10px 14px;transition:border-color .15s,background .15s;}
+.track:hover{border-color:var(--green);background:var(--green-dim);}
+.track img{width:46px;height:46px;border-radius:3px;object-fit:cover;flex-shrink:0;}
+.track .info{flex:1;overflow:hidden;}
+.tname{font-size:0.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tartist{font-size:0.72rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.req-btn{background:none;border:1px solid var(--green);color:var(--green);border-radius:3px;padding:6px 14px;font-family:var(--mono);font-size:0.7rem;font-weight:700;cursor:pointer;flex-shrink:0;transition:background .15s,color .15s;}
+.req-btn:hover{background:var(--green);color:#000;}
+.req-btn:disabled{border-color:var(--muted);color:var(--muted);cursor:not-allowed;}
+
+/* QUEUE */
+.section-label{font-size:0.6rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid var(--border);padding-bottom:6px;margin-bottom:12px;}
+#queue-list{display:flex;flex-direction:column;gap:8px;}
+.q-item{display:flex;align-items:center;gap:12px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:10px 14px;}
+.q-item.approved{border-color:rgba(29,185,84,.3);}
+.q-item img{width:38px;height:38px;border-radius:2px;object-fit:cover;}
+.q-item .info{flex:1;overflow:hidden;}
+.qname{font-size:0.78rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.qartist{font-size:0.67rem;color:var(--muted);}
+.badge{font-size:0.6rem;padding:3px 8px;border-radius:2px;flex-shrink:0;font-weight:700;letter-spacing:.5px;font-family:var(--mono);}
+.badge.pending{background:var(--amber);color:#000;}
+.badge.approved{background:var(--green);color:#000;}
+.badge.refused{background:#252525;color:var(--muted);}
+.empty{color:var(--muted);font-size:0.75rem;text-align:center;padding:24px 0;font-family:var(--mono);}
+
+/* TOAST */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(50px);background:var(--surface2);border:1px solid var(--green);color:var(--text);padding:10px 22px;border-radius:4px;font-size:0.75rem;font-family:var(--mono);transition:transform .3s,opacity .3s;opacity:0;z-index:999;}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+::-webkit-scrollbar{width:3px} ::-webkit-scrollbar-thumb{background:var(--border)}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="logo">FLUX</div>
+  <p>ENTRE LE CODE DE LA SOIRÉE</p>
+  <label>NOM DE LA FÊTE</label>
+  <input id="l-code" type="text" placeholder="FIESTA24" maxlength="20"
+         oninput="this.value=this.value.toUpperCase()"
+         onkeydown="if(event.key==='Enter')document.getElementById('l-pass').focus()"/>
+  <label style="margin-top:4px">MOT DE PASSE</label>
+  <input id="l-pass" type="password" placeholder="••••••••"
+         onkeydown="if(event.key==='Enter')login()"/>
+  <div class="err" id="l-err"></div>
+  <button class="btn" id="login-btn" onclick="login()">REJOINDRE →</button>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none;flex-direction:column;min-height:100vh;">
+  <header>
+    <div>
+      <div class="brand">🎵 FLUX</div>
+      <div class="session-badge" id="session-badge">SESSION —</div>
+    </div>
+    <div class="now-playing">
+      <div class="dot"></div>
+      <div class="np-text" id="np-text">—</div>
+    </div>
+  </header>
+  <main>
+    <div class="search-wrap">
+      <input id="search-input" type="text" placeholder="Cherche un titre, un artiste..."
+             onkeydown="if(event.key==='Enter')search()"/>
+      <button onclick="search()">🔍</button>
+    </div>
+    <div id="results"></div>
+    <div class="section-label">Tes demandes</div>
+    <div id="queue-list"><div class="empty">Aucune demande pour l'instant</div></div>
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API = 'https://script.google.com/macros/s/AKfycbwga64VP0Q2rqNLDg86bJfhB5Eh7lwLgFDNfBsF9fyx_RGdC32L1U3eP0bOuRzQW32FEQ/exec';
+const S = { session: null, sessionName: null };
+
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = JSON.parse(localStorage.getItem('flux_kiosk') || 'null');
+  if (saved) document.getElementById('l-code').value = saved.code || '';
+});
+
+async function login() {
+  const code = document.getElementById('l-code').value.trim().toUpperCase();
+  const pass = document.getElementById('l-pass').value.trim();
+  const btn  = document.getElementById('login-btn');
+  const err  = document.getElementById('l-err');
+  err.style.display = 'none';
+  if (!code || !pass) { showErr('Remplis les deux champs'); return; }
+
+  btn.disabled = true; btn.textContent = '...';
+  try {
+    const r = await fetch(API, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'validateSession', code, password: pass })
+    });
+    const d = await r.json();
+    if (d.error) { showErr('Code ou mot de passe incorrect'); return; }
+    S.session = code; S.sessionName = d.name;
+    localStorage.setItem('flux_kiosk', JSON.stringify({ code }));
+    launchApp();
+  } catch(e) {
+    showErr('Erreur réseau');
+  } finally {
+    btn.disabled = false; btn.textContent = 'REJOINDRE →';
+  }
+}
+
+function showErr(msg) {
+  const el = document.getElementById('l-err');
+  el.textContent = msg; el.style.display = 'block';
+}
+
+function launchApp() {
+  document.getElementById('login').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('session-badge').textContent = 'SESSION ' + S.session + ' — ' + S.sessionName;
+  pollNowPlaying();
+  setInterval(pollNowPlaying, 6000);
+  pollQueue();
+  setInterval(pollQueue, 4000);
+}
+
+// ── NOW PLAYING ──
+async function pollNowPlaying() {
+  try {
+    const r = await fetch(`${API}?action=nowplaying&session=${S.session}`);
+    const d = await r.json();
+    document.getElementById('np-text').textContent = d.playing ? `${d.name} — ${d.artist}` : '—';
+  } catch(e) {}
+}
+
+// ── SEARCH ──
+async function search() {
+  const q  = document.getElementById('search-input').value.trim();
+  if (!q) return;
+  const el = document.getElementById('results');
+  el.innerHTML = '<div class="empty">Recherche en cours...</div>';
+  try {
+    const res  = await fetch(API, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'search', q, session: S.session })
+    });
+    const data = await res.json();
+    if (!data.tracks || !data.tracks.length) { el.innerHTML = '<div class="empty">Aucun résultat</div>'; return; }
+    renderResults(data.tracks);
+  } catch(e) { el.innerHTML = '<div class="empty">Erreur de recherche</div>'; }
+}
+
+function renderResults(tracks) {
+  const el = document.getElementById('results');
+  el.innerHTML = '';
+  tracks.forEach(t => {
+    const div = document.createElement('div');
+    div.className = 'track';
+    div.innerHTML = `
+      <img src="${t.img}" alt="">
+      <div class="info"><div class="tname">${t.name}</div><div class="tartist">${t.artist}</div></div>
+      <button class="req-btn" onclick="requestTrack(this,'${esc(t)}')">+ Demander</button>
+    `;
+    el.appendChild(div);
+  });
+}
+
+async function requestTrack(btn, tStr) {
+  const t = JSON.parse(tStr);
+  btn.disabled = true; btn.textContent = '...';
+  try {
+    await fetch(API, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action:'add', session: S.session, trackId: t.id, name: t.name, artist: t.artist, album: t.album, img: t.img, uri: t.uri })
+    });
+    toast(`✅ "${t.name}" envoyé !`);
+    btn.textContent = '✓ Envoyé';
+    document.getElementById('results').innerHTML = '';
+    document.getElementById('search-input').value = '';
+    pollQueue();
+  } catch(e) { btn.disabled=false; btn.textContent='+ Demander'; }
+}
+
+// ── QUEUE ──
+async function pollQueue() {
+  try {
+    const r    = await fetch(`${API}?action=list&session=${S.session}`);
+    const rows = await r.json();
+    renderQueue(rows.filter(r => r.status !== 'refused'));
+  } catch(e) {}
+}
+
+function renderQueue(rows) {
+  const el = document.getElementById('queue-list');
+  if (!rows.length) { el.innerHTML = '<div class="empty">Aucune demande pour l\'instant</div>'; return; }
+  el.innerHTML = rows.map(r => `
+    <div class="q-item ${r.status}">
+      <img src="${r.img}" alt="">
+      <div class="info"><div class="qname">${r.name}</div><div class="qartist">${r.artist} · ${r.ts}</div></div>
+      <span class="badge ${r.status}">${r.status==='pending'?'EN ATTENTE':r.status==='approved'?'APPROUVÉ':'REFUSÉ'}</span>
+    </div>
+  `).join('');
+}
+
+function esc(obj) { return JSON.stringify(obj).replace(/'/g,"\\'"); }
+let tt;
+function toast(msg) {
+  const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show');
+  clearTimeout(tt); tt=setTimeout(()=>el.classList.remove('show'),2800);
+}
+</script>
+</body>
+</html>
