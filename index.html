@@ -320,16 +320,13 @@ async function handleSpotifyCallback(authCode) {
     if (!d.access_token) { history.replaceState(null,'',location.pathname); return; }
 
     const expiry = Date.now() + (d.expires_in * 1000) - 60000;
-    let spName = 'Spotify';
-    try {
-      const me  = await fetch('https://api.spotify.com/v1/me', { headers: { 'Authorization': 'Bearer ' + d.access_token } });
-      if (me.ok) { const meD = await me.json(); spName = meD.display_name || spName; }
-    } catch(e) {}
-    const meD = { display_name: spName };
+    const spName = 'Spotify';
 
+    // Sauvegarder immédiatement les tokens sans attendre /v1/me
     localStorage.setItem('flux_sp', JSON.stringify({
       access: d.access_token, refresh: d.refresh_token, expiry, name: spName
     }));
+    const meD = { display_name: spName };
 
     if (session?.code) {
       await apiFetch({ action: 'saveTokens', code: session.code, access_token: d.access_token, refresh_token: d.refresh_token, expiry });
