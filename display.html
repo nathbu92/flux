@@ -286,7 +286,10 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
         <div class="brand">🎵 DJ KIOSK</div>
         <div class="live-dot"></div>
       </div>
-      <div id="clock">00:00</div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div id="clock">00:00</div>
+        <button onclick="logoutDisplay()" style="background:none;border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);border-radius:3px;padding:5px 10px;font-family:var(--font-body);font-size:0.6rem;cursor:pointer;letter-spacing:1px;transition:all .2s;" onmouseover="this.style.borderColor='#ef4444';this.style.color='#ef4444'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)';this.style.color='rgba(255,255,255,0.3)'">⏻ QUITTER</button>
+      </div>
     </div>
 
     <!-- NOW PLAYING BAR -->
@@ -469,6 +472,12 @@ function startProgressTick() {
     document.getElementById('p-duration').textContent = msToTime(S.durationMs);
     if (S.lyricsOn && S.lyrics.length) updateActiveLyric(S.progressMs / 1000);
   }, 1000);
+}
+
+function logoutDisplay() {
+  if (!confirm("Quitter la session display ?")) return;
+  localStorage.removeItem("display_session");
+  location.reload();
 }
 
 function msToTime(ms) {

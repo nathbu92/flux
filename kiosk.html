@@ -105,6 +105,7 @@ main{flex:1;max-width:620px;width:100%;margin:0 auto;padding:28px 20px;}
       <div class="brand">🎵 FLUX</div>
       <div class="session-badge" id="session-badge">SESSION —</div>
     </div>
+    <button onclick="logout()" style="background:none;border:1px solid #333;color:#555;border-radius:3px;padding:5px 10px;font-family:var(--mono);font-size:0.6rem;cursor:pointer;letter-spacing:1px;" onmouseover="this.style.borderColor='#ef4444';this.style.color='#ef4444'" onmouseout="this.style.borderColor='#333';this.style.color='#555'">⏻ QUITTER</button>
     <div class="now-playing">
       <div class="dot"></div>
       <div class="np-text" id="np-text">—</div>
@@ -250,6 +251,12 @@ function renderQueue(rows) {
       <span class="badge ${r.status}">${r.status==='pending'?'EN ATTENTE':r.status==='approved'?'APPROUVÉ':'REFUSÉ'}</span>
     </div>
   `).join('');
+}
+
+function logout() {
+  if (!confirm("Quitter la session ?")) return;
+  localStorage.removeItem("flux_kiosk");
+  location.reload();
 }
 
 function esc(obj) { return JSON.stringify(obj).replace(/'/g,"\\'"); }
