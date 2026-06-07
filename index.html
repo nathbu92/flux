@@ -87,6 +87,16 @@ main{flex:1;max-width:860px;width:100%;margin:0 auto;padding:28px 20px;}
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(50px);background:var(--surface2);border:1px solid var(--amber);color:var(--text);padding:10px 22px;border-radius:4px;font-size:0.75rem;font-family:var(--mono);transition:transform .3s,opacity .3s;opacity:0;z-index:999;}
 #toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
 ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--border)}
+
+/* TABS */
+.tabs{display:flex;gap:0;border:1px solid var(--border);border-radius:4px;overflow:hidden;width:100%;max-width:340px;}
+.tab{flex:1;background:transparent;border:none;color:var(--muted);font-family:var(--mono);font-size:0.72rem;font-weight:700;letter-spacing:2px;padding:10px;cursor:pointer;transition:background .2s,color .2s;}
+.tab.active{background:var(--amber);color:#000;}
+.tab:hover:not(.active){color:var(--amber);}
+#panel-join,#panel-create{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;}
+#panel-join input,#panel-create input{width:100%;max-width:340px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:12px 16px;color:var(--text);font-family:var(--mono);font-size:0.85rem;outline:none;text-align:center;letter-spacing:2px;transition:border-color .2s;}
+#panel-join input:focus,#panel-create input:focus{border-color:var(--amber);}
+#panel-join .btn,#panel-create .btn{width:100%;max-width:340px;}
 </style>
 </head>
 <body>
@@ -95,16 +105,35 @@ main{flex:1;max-width:860px;width:100%;margin:0 auto;padding:28px 20px;}
 <div id="login">
   <div class="logo">⚡ ADMIN</div>
   <p>ACCÈS RÉSERVÉ AU DJ</p>
-  <label>NOM DE LA FÊTE</label>
-  <input id="l-code" type="text" placeholder="FIESTA24" maxlength="20"
-         oninput="this.value=this.value.toUpperCase()"
-         onkeydown="if(event.key==='Enter')document.getElementById('l-pass').focus()"/>
-  <label style="margin-top:4px">MOT DE PASSE ADMIN</label>
-  <input id="l-pass" type="password" placeholder="••••••••"
-         onkeydown="if(event.key==='Enter')login()"/>
-  <div class="err" id="l-err"></div>
-  <button class="btn" id="login-btn" onclick="login()">ENTRER / CRÉER →</button>
-  <p style="font-size:0.62rem;margin-top:8px;">Première fois → la session est créée automatiquement</p>
+  <div class="tabs">
+    <button class="tab active" id="tab-join" onclick="switchTab('join')">REJOINDRE</button>
+    <button class="tab" id="tab-create" onclick="switchTab('create')">CRÉER</button>
+  </div>
+  <div id="panel-join">
+    <label>CODE DE LA SESSION</label>
+    <input id="j-code" type="text" placeholder="FIESTA24" maxlength="20"
+           oninput="this.value=this.value.toUpperCase()"
+           onkeydown="if(event.key==='Enter')document.getElementById('j-pass').focus()"/>
+    <label style="margin-top:4px">MOT DE PASSE</label>
+    <input id="j-pass" type="password" placeholder="••••••••"
+           onkeydown="if(event.key==='Enter')doJoin()"/>
+    <div class="err" id="j-err"></div>
+    <button class="btn" id="join-btn" onclick="doJoin()">ENTRER →</button>
+  </div>
+  <div id="panel-create" style="display:none">
+    <label>CODE DE LA SESSION</label>
+    <input id="c-code" type="text" placeholder="FIESTA24" maxlength="20"
+           oninput="this.value=this.value.toUpperCase()"
+           onkeydown="if(event.key==='Enter')document.getElementById('c-name').focus()"/>
+    <label style="margin-top:4px">NOM DE LA SOIRÉE</label>
+    <input id="c-name" type="text" placeholder="Fiesta de Pablo"
+           onkeydown="if(event.key==='Enter')document.getElementById('c-pass').focus()"/>
+    <label style="margin-top:4px">MOT DE PASSE</label>
+    <input id="c-pass" type="password" placeholder="••••••••"
+           onkeydown="if(event.key==='Enter')doCreate()"/>
+    <div class="err" id="c-err"></div>
+    <button class="btn" id="create-btn" onclick="doCreate()">CRÉER →</button>
+  </div>
 </div>
 
 <!-- APP -->
@@ -158,55 +187,89 @@ const S = { session: null, sessionName: null };
 window.addEventListener('DOMContentLoaded', async () => {
   const params = new URLSearchParams(location.search);
   if (params.get('code')) {
-    // Retour du flow Spotify OAuth
     await handleSpotifyCallback(params.get('code'));
     return;
   }
-  // Pré-remplir le code si connu
+  // Auto-login via token sauvegardé
   const saved = JSON.parse(localStorage.getItem('flux_session') || 'null');
-  if (saved) document.getElementById('l-code').value = saved.code;
+  if (saved?.code && saved?.token && saved.token === btoa(saved.code + ':' + saved.pass)) {
+    S.session = saved.code; S.sessionName = saved.name;
+    launchApp();
+    return;
+  }
+  if (saved?.code) document.getElementById('j-code').value = saved.code;
 });
 
-// ── LOGIN / CREATE ──
-async function login() {
-  const code = document.getElementById('l-code').value.trim().toUpperCase();
-  const pass = document.getElementById('l-pass').value.trim();
-  const btn  = document.getElementById('login-btn');
-  hideErr();
-  if (!code || !pass) { showErr('Remplis les deux champs'); return; }
+// ── TABS ──
+function switchTab(tab) {
+  const isJoin = tab === 'join';
+  document.getElementById('panel-join').style.display   = isJoin ? 'flex' : 'none';
+  document.getElementById('panel-create').style.display = isJoin ? 'none' : 'flex';
+  document.getElementById('tab-join').classList.toggle('active', isJoin);
+  document.getElementById('tab-create').classList.toggle('active', !isJoin);
+  document.getElementById(isJoin ? 'j-err' : 'c-err').style.display = 'none';
+}
 
+// ── REJOINDRE ──
+async function doJoin() {
+  const code = document.getElementById('j-code').value.trim().toUpperCase();
+  const pass = document.getElementById('j-pass').value.trim();
+  const btn  = document.getElementById('join-btn');
+  const err  = document.getElementById('j-err');
+  err.style.display = 'none';
+  if (!code || !pass) { err.textContent = 'Remplis les deux champs'; err.style.display='block'; return; }
   btn.disabled = true; btn.textContent = '...';
-
   try {
-    // 1. Essayer de valider (session existante)
-    let res = await apiFetch({ action: 'validateSession', code, password: pass });
+    const res = await apiFetch({ action: 'validateSession', code, password: pass });
     if (res.ok) {
       S.session = code; S.sessionName = res.name;
-      localStorage.setItem('flux_session', JSON.stringify({ code, name: res.name }));
+      // Sauvegarder avec token d'auto-login
+      localStorage.setItem('flux_session', JSON.stringify({
+        code, name: res.name, pass,
+        token: btoa(code + ':' + pass)
+      }));
       launchApp();
-      return;
+    } else {
+      err.textContent = res.error || 'Code ou mot de passe incorrect';
+      err.style.display = 'block';
     }
+  } catch(e) {
+    err.textContent = 'Erreur réseau'; err.style.display='block';
+  } finally {
+    btn.disabled = false; btn.textContent = 'ENTRER →';
+  }
+}
 
-    // 2. Essayer de créer (nouvelle session)
-    res = await apiFetch({ action: 'createSession', code, password: pass, name: code });
+// ── CRÉER ──
+async function doCreate() {
+  const code = document.getElementById('c-code').value.trim().toUpperCase();
+  const name = document.getElementById('c-name').value.trim();
+  const pass = document.getElementById('c-pass').value.trim();
+  const btn  = document.getElementById('create-btn');
+  const err  = document.getElementById('c-err');
+  err.style.display = 'none';
+  if (!code || !pass || !name) { err.textContent = 'Remplis tous les champs'; err.style.display='block'; return; }
+  btn.disabled = true; btn.textContent = '...';
+  try {
+    const res = await apiFetch({ action: 'createSession', code, password: pass, name });
     if (res.ok) {
-      S.session = code; S.sessionName = code;
-      localStorage.setItem('flux_session', JSON.stringify({ code, name: code }));
-      // Si Spotify déjà connecté avant, sauvegarder les tokens
+      S.session = code; S.sessionName = name;
+      localStorage.setItem('flux_session', JSON.stringify({
+        code, name, pass,
+        token: btoa(code + ':' + pass)
+      }));
       const sp = JSON.parse(localStorage.getItem('flux_sp') || 'null');
       if (sp) await apiFetch({ action: 'saveTokens', code, access_token: sp.access, refresh_token: sp.refresh, expiry: sp.expiry });
       launchApp();
       toast('✨ Session créée !');
-      return;
+    } else {
+      err.textContent = res.error || 'Erreur inconnue';
+      err.style.display = 'block';
     }
-
-    // Les deux ont échoué : code pris + mauvais mdp
-    if (res.error === 'Code déjà utilisé') showErr('Mot de passe incorrect');
-    else showErr(res.error || 'Erreur inconnue');
   } catch(e) {
-    showErr('Erreur réseau');
+    err.textContent = 'Erreur réseau'; err.style.display='block';
   } finally {
-    btn.disabled = false; btn.textContent = 'ENTRER / CRÉER →';
+    btn.disabled = false; btn.textContent = 'CRÉER →';
   }
 }
 
@@ -276,9 +339,10 @@ async function handleSpotifyCallback(authCode) {
       toast('🎵 Spotify connecté : ' + meD.display_name);
     } else {
       // Pas de session connue → montrer login avec status Spotify
-      if (session?.code) document.getElementById('l-code').value = session.code;
-      showErr('✅ Spotify connecté. Entre ton code de session pour continuer.');
-      document.getElementById('l-err').style.color = 'var(--green)';
+      if (session?.code) document.getElementById('j-code').value = session.code;
+      const jErr = document.getElementById('j-err');
+      jErr.textContent = '✅ Spotify connecté. Entre ton code de session.';
+      jErr.style.color = 'var(--green)'; jErr.style.display = 'block';
     }
   } catch(e) {
     console.error('Spotify callback error:', e);
@@ -396,8 +460,8 @@ async function apiFetch(body) {
   return r.json();
 }
 
-function showErr(msg) { const el=document.getElementById('l-err'); el.textContent=msg; el.style.display='block'; }
-function hideErr()    { document.getElementById('l-err').style.display='none'; }
+function showErr(msg) {}
+function hideErr()    {}
 
 let tt;
 function toast(msg) {
