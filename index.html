@@ -178,7 +178,7 @@ main{flex:1;max-width:860px;width:100%;margin:0 auto;padding:28px 20px;}
 <div id="toast"></div>
 
 <script>
-const API         = 'https://script.google.com/macros/s/AKfycbyCrPsTa4ocezdErDKTiRbV6Brj3rjpGf9mlnMweyE1E4UVBoKqg3d9CxTrSgC9T_hd2Q/exec';
+const API         = 'https://script.google.com/macros/s/AKfycbwSNcabHyotagsd9Xi1Hq_VJBUYbaee9Z9UcQHvhCWqubVauQg5eTgLutStZvBaVXV01Q/exec';
 const SP_CLIENT_ID = 'ec90e6d275e4450cb50b7926e8a3ff10';
 const REDIRECT_URI = 'https://nathbu92.github.io/flux/';
 
@@ -504,8 +504,20 @@ function handleSpotifyClick() {
   } else { connectSpotify(); }
 }
 function logout() {
-  if (!confirm("Quitter la session ?")) return;
-  localStorage.removeItem("flux_session");
+  const sp = JSON.parse(localStorage.getItem('flux_sp') || 'null');
+  if (sp) {
+    const choice = confirm('Quitter la session ?\n\nCliquer OK pour déconnecter aussi Spotify.\nCliquer Annuler pour rester connecté Spotify.');
+    if (choice === false && !window.confirm) return; // fallback
+    // On ne peut pas avoir 3 boutons natifs, on utilise un 2e confirm
+    const keepSpotify = !confirm('Déconnecter Spotify aussi ?\n\nOK = déconnecter Spotify\nAnnuler = garder Spotify connecté');
+    if (!keepSpotify) {
+      localStorage.removeItem('flux_sp');
+      localStorage.removeItem('pkce_verifier');
+    }
+  } else {
+    if (!confirm('Quitter la session ?')) return;
+  }
+  localStorage.removeItem('flux_session');
   S.session = null; S.sessionName = null;
   location.reload();
 }

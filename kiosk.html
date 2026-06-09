@@ -8,7 +8,7 @@
 <style>
 :root {
   --bg:#080808;--surface:#111;--surface2:#181818;--border:#222;
-  --green:#1DB954;--green-dim:rgba(29,185,84,.1);--amber:#ffab00;
+  --green:#1DB954;--green-dim:rgba(29,185,84,.08);--amber:#ffab00;
   --text:#f0f0f0;--muted:#555;--red:#ef4444;
   --mono:'Space Mono',monospace;--sans:'DM Sans',sans-serif;--display:'Bebas Neue',sans-serif;
 }
@@ -29,56 +29,74 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .btn:disabled{opacity:.4;cursor:not-allowed;}
 
 /* HEADER */
-header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;flex-shrink:0;}
-.brand{font-family:var(--display);font-size:1.6rem;color:var(--green);letter-spacing:2px;}
-.session-badge{font-size:0.6rem;color:var(--muted);font-family:var(--mono);letter-spacing:2px;}
-.now-playing{display:flex;align-items:center;gap:8px;max-width:260px;overflow:hidden;}
-.now-playing .dot{width:6px;height:6px;background:var(--green);border-radius:50%;flex-shrink:0;animation:pulse 1.6s infinite;}
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;flex-shrink:0;gap:10px;}
+.brand{font-family:var(--display);font-size:1.5rem;color:var(--green);letter-spacing:2px;}
+.session-badge{font-size:0.58rem;color:var(--muted);font-family:var(--mono);letter-spacing:1px;margin-top:1px;}
+.header-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;}
+.now-playing{display:flex;align-items:center;gap:7px;max-width:220px;overflow:hidden;}
+.now-playing .dot{width:5px;height:5px;background:var(--green);border-radius:50%;flex-shrink:0;animation:pulse 1.6s infinite;}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.2;transform:scale(.5)}}
-.np-text{font-size:0.7rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.np-text{font-size:0.65rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sp-status{font-size:0.55rem;font-family:var(--mono);letter-spacing:1px;padding:3px 8px;border-radius:2px;}
+.sp-status.connected{color:var(--green);border:1px solid rgba(29,185,84,.25);background:rgba(29,185,84,.06);}
+.sp-status.disconnected{color:var(--muted);border:1px solid var(--border);}
+.quit-btn{background:none;border:1px solid var(--border);color:var(--muted);border-radius:3px;padding:4px 9px;font-family:var(--mono);font-size:0.58rem;cursor:pointer;letter-spacing:1px;transition:all .2s;}
+.quit-btn:hover{border-color:var(--red);color:var(--red);}
 
 /* MAIN */
-main{flex:1;max-width:620px;width:100%;margin:0 auto;padding:28px 20px;}
+main{flex:1;max-width:620px;width:100%;margin:0 auto;padding:22px 16px;}
 
 /* SEARCH */
-.search-wrap{position:relative;margin-bottom:14px;}
-.search-wrap input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:14px 50px 14px 18px;color:var(--text);font-family:var(--mono);font-size:0.88rem;outline:none;transition:border-color .2s;}
+.search-wrap{position:relative;margin-bottom:12px;}
+.search-wrap input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:13px 48px 13px 16px;color:var(--text);font-family:var(--mono);font-size:0.85rem;outline:none;transition:border-color .2s;}
 .search-wrap input:focus{border-color:var(--green);}
 .search-wrap input::placeholder{color:var(--muted);}
-.search-wrap button{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:var(--green);border:none;border-radius:3px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1rem;color:#000;transition:opacity .2s;}
+.search-wrap button{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:var(--green);border:none;border-radius:3px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.9rem;color:#000;transition:opacity .2s;}
 .search-wrap button:hover{opacity:.8;}
 
 /* TRACK CARD */
-#results{display:flex;flex-direction:column;gap:6px;margin-bottom:28px;}
-.track{display:flex;align-items:center;gap:12px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:10px 14px;transition:border-color .15s,background .15s;}
+#results{display:flex;flex-direction:column;gap:5px;margin-bottom:24px;}
+.track{display:flex;align-items:center;gap:11px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:9px 12px;transition:border-color .15s,background .15s;}
 .track:hover{border-color:var(--green);background:var(--green-dim);}
-.track img{width:46px;height:46px;border-radius:3px;object-fit:cover;flex-shrink:0;}
+.track img{width:44px;height:44px;border-radius:3px;object-fit:cover;flex-shrink:0;}
 .track .info{flex:1;overflow:hidden;}
-.tname{font-size:0.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.tartist{font-size:0.72rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.req-btn{background:none;border:1px solid var(--green);color:var(--green);border-radius:3px;padding:6px 14px;font-family:var(--mono);font-size:0.7rem;font-weight:700;cursor:pointer;flex-shrink:0;transition:background .15s,color .15s;}
+.tname{font-size:0.83rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tartist{font-size:0.7rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.req-btn{background:none;border:1px solid var(--green);color:var(--green);border-radius:3px;padding:6px 12px;font-family:var(--mono);font-size:0.68rem;font-weight:700;cursor:pointer;flex-shrink:0;transition:background .15s,color .15s;}
 .req-btn:hover{background:var(--green);color:#000;}
 .req-btn:disabled{border-color:var(--muted);color:var(--muted);cursor:not-allowed;}
 
+/* SECTION LABELS */
+.section-label{font-size:0.58rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid var(--border);padding-bottom:5px;margin-bottom:11px;display:flex;align-items:center;justify-content:space-between;}
+
+/* RECOMMENDATIONS */
+#reco-section{margin-bottom:24px;}
+#reco-list{display:flex;flex-direction:column;gap:5px;}
+.reco-track{display:flex;align-items:center;gap:11px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:9px 12px;transition:border-color .15s,background .15s;opacity:0.85;}
+.reco-track:hover{border-color:rgba(29,185,84,.4);background:var(--green-dim);opacity:1;}
+.reco-track img{width:38px;height:38px;border-radius:3px;object-fit:cover;flex-shrink:0;}
+.reco-track .info{flex:1;overflow:hidden;}
+.reco-label{font-size:0.52rem;color:rgba(29,185,84,.5);letter-spacing:1px;font-family:var(--mono);}
+
 /* QUEUE */
-.section-label{font-size:0.6rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid var(--border);padding-bottom:6px;margin-bottom:12px;}
-#queue-list{display:flex;flex-direction:column;gap:8px;}
-.q-item{display:flex;align-items:center;gap:12px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:10px 14px;}
-.q-item.approved{border-color:rgba(29,185,84,.3);}
-.q-item img{width:38px;height:38px;border-radius:2px;object-fit:cover;}
+#queue-list{display:flex;flex-direction:column;gap:7px;}
+.q-item{display:flex;align-items:center;gap:11px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:9px 12px;transition:border-color .3s,opacity .5s;}
+.q-item.approved{border-color:rgba(29,185,84,.25);}
+.q-item.fading{opacity:0;}
+.q-item img{width:36px;height:36px;border-radius:2px;object-fit:cover;}
 .q-item .info{flex:1;overflow:hidden;}
-.qname{font-size:0.78rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.qartist{font-size:0.67rem;color:var(--muted);}
-.badge{font-size:0.6rem;padding:3px 8px;border-radius:2px;flex-shrink:0;font-weight:700;letter-spacing:.5px;font-family:var(--mono);}
+.qname{font-size:0.76rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.qartist{font-size:0.64rem;color:var(--muted);}
+.badge{font-size:0.58rem;padding:3px 7px;border-radius:2px;flex-shrink:0;font-weight:700;letter-spacing:.5px;font-family:var(--mono);}
 .badge.pending{background:var(--amber);color:#000;}
 .badge.approved{background:var(--green);color:#000;}
-.badge.refused{background:#252525;color:var(--muted);}
-.empty{color:var(--muted);font-size:0.75rem;text-align:center;padding:24px 0;font-family:var(--mono);}
+.badge.refused{background:#1e1e1e;color:var(--muted);}
+.empty{color:var(--muted);font-size:0.72rem;text-align:center;padding:20px 0;font-family:var(--mono);}
 
 /* TOAST */
-#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(50px);background:var(--surface2);border:1px solid var(--green);color:var(--text);padding:10px 22px;border-radius:4px;font-size:0.75rem;font-family:var(--mono);transition:transform .3s,opacity .3s;opacity:0;z-index:999;}
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(50px);background:var(--surface2);border:1px solid var(--green);color:var(--text);padding:9px 20px;border-radius:4px;font-size:0.72rem;font-family:var(--mono);transition:transform .3s,opacity .3s;opacity:0;z-index:999;}
 #toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
-::-webkit-scrollbar{width:3px} ::-webkit-scrollbar-thumb{background:var(--border)}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--border)}
 </style>
 </head>
 <body>
@@ -105,20 +123,39 @@ main{flex:1;max-width:620px;width:100%;margin:0 auto;padding:28px 20px;}
       <div class="brand">🎵 FLUX</div>
       <div class="session-badge" id="session-badge">SESSION —</div>
     </div>
-    <button onclick="logout()" style="background:none;border:1px solid #333;color:#555;border-radius:3px;padding:5px 10px;font-family:var(--mono);font-size:0.6rem;cursor:pointer;letter-spacing:1px;" onmouseover="this.style.borderColor='#ef4444';this.style.color='#ef4444'" onmouseout="this.style.borderColor='#333';this.style.color='#555'">⏻ QUITTER</button>
-    <div class="now-playing">
-      <div class="dot"></div>
-      <div class="np-text" id="np-text">—</div>
+    <div class="header-right">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="now-playing">
+          <div class="dot"></div>
+          <div class="np-text" id="np-text">—</div>
+        </div>
+        <button class="quit-btn" onclick="logout()">⏻</button>
+      </div>
+      <div id="sp-status" class="sp-status disconnected">⚪ NON CONNECTÉ À SPOTIFY</div>
     </div>
   </header>
+
   <main>
     <div class="search-wrap">
       <input id="search-input" type="text" placeholder="Cherche un titre, un artiste..."
              onkeydown="if(event.key==='Enter')search()"/>
       <button onclick="search()">🔍</button>
     </div>
+
     <div id="results"></div>
-    <div class="section-label">Tes demandes</div>
+
+    <!-- RECOMMENDATIONS -->
+    <div id="reco-section" style="display:none;">
+      <div class="section-label">
+        <span>✨ Suggestions</span>
+        <span style="font-size:0.52rem;color:rgba(29,185,84,.4);">BASÉ SUR LA MUSIQUE EN COURS</span>
+      </div>
+      <div id="reco-list"></div>
+    </div>
+
+    <div class="section-label" style="margin-top:8px;">
+      <span>Tes demandes</span>
+    </div>
     <div id="queue-list"><div class="empty">Aucune demande pour l'instant</div></div>
   </main>
 </div>
@@ -126,8 +163,11 @@ main{flex:1;max-width:620px;width:100%;margin:0 auto;padding:28px 20px;}
 <div id="toast"></div>
 
 <script>
-const API = 'https://script.google.com/macros/s/AKfycbyCrPsTa4ocezdErDKTiRbV6Brj3rjpGf9mlnMweyE1E4UVBoKqg3d9CxTrSgC9T_hd2Q/exec';
-const S = { session: null, sessionName: null };
+const API = 'https://script.google.com/macros/s/AKfycbwSNcabHyotagsd9Xi1Hq_VJBUYbaee9Z9UcQHvhCWqubVauQg5eTgLutStZvBaVXV01Q/exec';
+const S = { session: null, sessionName: null, spotifyConnected: false, lastTrackId: null };
+
+// Approved items are hidden after 5 minutes
+const APPROVED_TIMES = {};
 
 window.addEventListener('DOMContentLoaded', () => {
   const saved = JSON.parse(localStorage.getItem('flux_kiosk') || 'null');
@@ -139,40 +179,55 @@ async function login() {
   const pass = document.getElementById('l-pass').value.trim();
   const btn  = document.getElementById('login-btn');
   const err  = document.getElementById('l-err');
-  err.style.display = 'none';
-  if (!code || !pass) { showErr('Remplis les deux champs'); return; }
-
-  btn.disabled = true; btn.textContent = '...';
+  err.style.display='none';
+  if (!code||!pass) { showErr('Remplis les deux champs'); return; }
+  btn.disabled=true; btn.textContent='...';
   try {
-    const r = await fetch(API, {
-      method: 'POST', headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'validateSession', code, password: pass })
-    });
+    const r = await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'validateSession',code,password:pass})});
     const d = await r.json();
     if (d.error) { showErr('Code ou mot de passe incorrect'); return; }
-    S.session = code; S.sessionName = d.name;
-    localStorage.setItem('flux_kiosk', JSON.stringify({ code }));
+    S.session=code; S.sessionName=d.name;
+    localStorage.setItem('flux_kiosk', JSON.stringify({code}));
     launchApp();
-  } catch(e) {
-    showErr('Erreur réseau');
-  } finally {
-    btn.disabled = false; btn.textContent = 'REJOINDRE →';
-  }
+  } catch(e) { showErr('Erreur réseau'); }
+  finally { btn.disabled=false; btn.textContent='REJOINDRE →'; }
 }
 
 function showErr(msg) {
-  const el = document.getElementById('l-err');
-  el.textContent = msg; el.style.display = 'block';
+  const el=document.getElementById('l-err');
+  el.textContent=msg; el.style.display='block';
 }
 
 function launchApp() {
-  document.getElementById('login').style.display = 'none';
-  document.getElementById('app').style.display = 'flex';
-  document.getElementById('session-badge').textContent = 'SESSION ' + S.session + ' — ' + S.sessionName;
-  pollNowPlaying();
-  setInterval(pollNowPlaying, 6000);
-  pollQueue();
-  setInterval(pollQueue, 4000);
+  document.getElementById('login').style.display='none';
+  document.getElementById('app').style.display='flex';
+  document.getElementById('session-badge').textContent='SESSION '+S.session+' — '+S.sessionName;
+  pollNowPlaying(); setInterval(pollNowPlaying, 6000);
+  pollQueue();      setInterval(pollQueue, 4000);
+  checkSpotifyStatus(); setInterval(checkSpotifyStatus, 15000);
+}
+
+// ── SPOTIFY STATUS ──
+async function checkSpotifyStatus() {
+  try {
+    const r = await fetch(`${API}?action=nowplaying&session=${S.session}`);
+    const d = await r.json();
+    const el = document.getElementById('sp-status');
+    if (d.error === 'No token') {
+      S.spotifyConnected=false;
+      el.className='sp-status disconnected';
+      el.textContent='⚪ NON CONNECTÉ À SPOTIFY';
+    } else {
+      S.spotifyConnected=true;
+      el.className='sp-status connected';
+      el.textContent='🟢 SPOTIFY CONNECTÉ';
+      // Also check for recommendations on new track
+      if (d.playing && d.id !== S.lastTrackId) {
+        S.lastTrackId = d.id;
+        loadRecommendations();
+      }
+    }
+  } catch(e) {}
 }
 
 // ── NOW PLAYING ──
@@ -184,34 +239,65 @@ async function pollNowPlaying() {
   } catch(e) {}
 }
 
+// ── RECOMMENDATIONS ──
+async function loadRecommendations() {
+  try {
+    const r = await fetch(`${API}?action=recommendations&session=${S.session}`);
+    const d = await r.json();
+    if (!d.tracks || !d.tracks.length) return;
+    const section = document.getElementById('reco-section');
+    const list    = document.getElementById('reco-list');
+    section.style.display='block';
+    list.innerHTML='';
+    d.tracks.forEach((t,i) => {
+      const key = 'reco_'+i+'_'+Date.now();
+      TRACK_MAP[key] = t;
+      const div = document.createElement('div');
+      div.className='reco-track';
+      div.innerHTML=`
+        <img src="${t.img}" alt="">
+        <div class="info">
+          <div class="reco-label">SUGGESTION</div>
+          <div class="tname">${t.name}</div>
+          <div class="tartist">${t.artist}</div>
+        </div>
+        <button class="req-btn" data-key="${key}">+ Demander</button>
+      `;
+      div.querySelector('.req-btn').addEventListener('click', function() {
+        requestTrack(this, key);
+      });
+      list.appendChild(div);
+    });
+  } catch(e) {}
+}
+
 // ── SEARCH ──
 async function search() {
-  const q  = document.getElementById('search-input').value.trim();
+  const q = document.getElementById('search-input').value.trim();
   if (!q) return;
   const el = document.getElementById('results');
-  el.innerHTML = '<div class="empty">Recherche en cours...</div>';
+  el.innerHTML='<div class="empty">Recherche en cours...</div>';
+  // Hide recommendations during search
+  document.getElementById('reco-section').style.display='none';
   try {
-    const res  = await fetch(API, {
-      method: 'POST', headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'search', q, session: S.session })
-    });
+    const res  = await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'search',q,session:S.session})});
     const data = await res.json();
-    if (!data.tracks || !data.tracks.length) { el.innerHTML = '<div class="empty">Aucun résultat</div>'; return; }
+    if (!data.tracks||!data.tracks.length) { el.innerHTML='<div class="empty">Aucun résultat</div>'; return; }
     renderResults(data.tracks);
-  } catch(e) { el.innerHTML = '<div class="empty">Erreur de recherche</div>'; }
+  } catch(e) { el.innerHTML='<div class="empty">Erreur de recherche</div>'; }
 }
 
 const TRACK_MAP = {};
 
 function renderResults(tracks) {
   const el = document.getElementById('results');
-  el.innerHTML = '';
-  tracks.forEach((t, i) => {
-    const key = 'track_' + i + '_' + Date.now();
-    TRACK_MAP[key] = t;
-    const div = document.createElement('div');
-    div.className = 'track';
-    div.innerHTML = `
+  el.innerHTML='';
+  tracks.forEach((t,i) => {
+    const key='track_'+i+'_'+Date.now();
+    TRACK_MAP[key]=t;
+    const div=document.createElement('div');
+    div.className='track';
+    div.innerHTML=`
       <img src="${t.img}" alt="">
       <div class="info"><div class="tname">${t.name}</div><div class="tartist">${t.artist}</div></div>
       <button class="req-btn" data-key="${key}">+ Demander</button>
@@ -226,16 +312,15 @@ function renderResults(tracks) {
 async function requestTrack(btn, key) {
   const t = TRACK_MAP[key];
   if (!t) return;
-  btn.disabled = true; btn.textContent = '...';
+  btn.disabled=true; btn.textContent='...';
   try {
-    await fetch(API, {
-      method: 'POST', headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action:'add', session: S.session, trackId: t.id, name: t.name, artist: t.artist, album: t.album, img: t.img, uri: t.uri })
-    });
+    await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'add',session:S.session,trackId:t.id,name:t.name,artist:t.artist,album:t.album,img:t.img,uri:t.uri})});
     toast(`✅ "${t.name}" envoyé !`);
-    btn.textContent = '✓ Envoyé';
-    document.getElementById('results').innerHTML = '';
-    document.getElementById('search-input').value = '';
+    btn.textContent='✓ Envoyé';
+    document.getElementById('results').innerHTML='';
+    document.getElementById('search-input').value='';
+    // Show recommendations again
+    if (S.lastTrackId) document.getElementById('reco-section').style.display='block';
     pollQueue();
   } catch(e) { btn.disabled=false; btn.textContent='+ Demander'; }
 }
@@ -245,29 +330,43 @@ async function pollQueue() {
   try {
     const r    = await fetch(`${API}?action=list&session=${S.session}`);
     const rows = await r.json();
-    renderQueue(rows.filter(r => r.status !== 'refused'));
+    // Track approved timestamps
+    rows.filter(r=>r.status==='approved').forEach(r => {
+      if (!APPROVED_TIMES[r.id]) APPROVED_TIMES[r.id] = Date.now();
+    });
+    // Filter: hide refused + hide approved after 5 min
+    const now = Date.now();
+    const visible = rows.filter(r => {
+      if (r.status==='refused') return false;
+      if (r.status==='approved' && APPROVED_TIMES[r.id] && now-APPROVED_TIMES[r.id]>5*60*1000) return false;
+      return true;
+    });
+    renderQueue(visible);
   } catch(e) {}
 }
 
 function renderQueue(rows) {
   const el = document.getElementById('queue-list');
-  if (!rows.length) { el.innerHTML = '<div class="empty">Aucune demande pour l\'instant</div>'; return; }
-  el.innerHTML = rows.map(r => `
-    <div class="q-item ${r.status}">
+  if (!rows.length) { el.innerHTML='<div class="empty">Aucune demande pour l\'instant</div>'; return; }
+  el.innerHTML='';
+  rows.forEach(r => {
+    const div=document.createElement('div');
+    div.className='q-item '+(r.status||'');
+    div.innerHTML=`
       <img src="${r.img}" alt="">
       <div class="info"><div class="qname">${r.name}</div><div class="qartist">${r.artist} · ${r.ts}</div></div>
       <span class="badge ${r.status}">${r.status==='pending'?'EN ATTENTE':r.status==='approved'?'APPROUVÉ':'REFUSÉ'}</span>
-    </div>
-  `).join('');
+    `;
+    el.appendChild(div);
+  });
 }
 
 function logout() {
-  if (!confirm("Quitter la session ?")) return;
-  localStorage.removeItem("flux_kiosk");
+  if (!confirm('Quitter la session ?')) return;
+  localStorage.removeItem('flux_kiosk');
   location.reload();
 }
 
-// esc removed — using TRACK_MAP instead
 let tt;
 function toast(msg) {
   const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show');
