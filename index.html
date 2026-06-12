@@ -178,7 +178,7 @@ main{flex:1;max-width:860px;width:100%;margin:0 auto;padding:28px 20px;}
 <div id="toast"></div>
 
 <script>
-const API         = 'https://script.google.com/macros/s/AKfycbwSNcabHyotagsd9Xi1Hq_VJBUYbaee9Z9UcQHvhCWqubVauQg5eTgLutStZvBaVXV01Q/exec';
+const API         = 'https://script.google.com/macros/s/AKfycbysSqZPvFwf24Rx9-zac9j97AigvO5EH5Bw5ZPrfVxVU-FNaEgTXjPWY0YJVA8BY2X3nw/exec';
 const SP_CLIENT_ID = 'ec90e6d275e4450cb50b7926e8a3ff10';
 const REDIRECT_URI = 'https://nathbu92.github.io/flux/';
 
@@ -455,18 +455,28 @@ async function approve(id, uri, name) {
   document.querySelectorAll(`#c-${id} button`).forEach(b => b.disabled = true);
   try {
     const qRes = await apiFetch({ action: 'addToQueue', session: S.session, uri });
-    console.log('addToQueue response:', JSON.stringify(qRes));
-    if (qRes.error) {
-      toast('⚠️ Spotify : ' + qRes.error + ' (approuvé quand même)');
-    } else if (qRes.ok) {
-      toast(`🎵 "${name}" ajouté à Spotify !`);
+    if (qRes.ok) {
+      // Only mark approved if Spotify accepted it
+      await apiFetch({ action: 'updateStatus', session: S.session, id, status: 'approved' });
+      toast(`🎵 "${name}" ajouté à la file Spotify !`);
+      poll();
+    } else if (qRes.error === 'No token') {
+      toast('⚠️ Spotify non connecté — reconnecte depuis l\'admin');
+      document.querySelectorAll(`#c-${id} button`).forEach(b => b.disabled = false);
+    } else if (qRes.status === 404) {
+      toast('⚠️ Aucun appareil Spotify actif — lance Spotify d\'abord');
+      document.querySelectorAll(`#c-${id} button`).forEach(b => b.disabled = false);
+    } else if (qRes.status === 403) {
+      toast('⚠️ Spotify Premium requis');
+      document.querySelectorAll(`#c-${id} button`).forEach(b => b.disabled = false);
     } else {
-      toast(`⚠️ Réponse inattendue Spotify`);
-      console.warn('unexpected qRes:', qRes);
+      toast(`⚠️ Erreur Spotify (${qRes.status||'?'}) — réessaie`);
+      document.querySelectorAll(`#c-${id} button`).forEach(b => b.disabled = false);
     }
-    await apiFetch({ action: 'updateStatus', session: S.session, id, status: 'approved' });
-    poll();
-  } catch(e) { console.error(e); toast('Erreur réseau'); }
+  } catch(e) {
+    console.error(e); toast('Erreur réseau');
+    document.querySelectorAll(`#c-${id} button`).forEach(b => b.disabled = false);
+  }
 }
 
 async function refuse(id) {

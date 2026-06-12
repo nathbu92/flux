@@ -80,9 +80,8 @@ main{flex:1;max-width:620px;width:100%;margin:0 auto;padding:22px 16px;}
 
 /* QUEUE */
 #queue-list{display:flex;flex-direction:column;gap:7px;}
-.q-item{display:flex;align-items:center;gap:11px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:9px 12px;transition:border-color .3s,opacity .5s;}
+.q-item{display:flex;align-items:center;gap:11px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:9px 12px;transition:border-color .3s,opacity .4s,transform .4s;}
 .q-item.approved{border-color:rgba(29,185,84,.25);}
-.q-item.fading{opacity:0;}
 .q-item img{width:36px;height:36px;border-radius:2px;object-fit:cover;}
 .q-item .info{flex:1;overflow:hidden;}
 .qname{font-size:0.76rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -163,7 +162,7 @@ main{flex:1;max-width:620px;width:100%;margin:0 auto;padding:22px 16px;}
 <div id="toast"></div>
 
 <script>
-const API = 'https://script.google.com/macros/s/AKfycbwSNcabHyotagsd9Xi1Hq_VJBUYbaee9Z9UcQHvhCWqubVauQg5eTgLutStZvBaVXV01Q/exec';
+const API = 'https://script.google.com/macros/s/AKfycbysSqZPvFwf24Rx9-zac9j97AigvO5EH5Bw5ZPrfVxVU-FNaEgTXjPWY0YJVA8BY2X3nw/exec';
 const S = { session: null, sessionName: null, spotifyConnected: false, lastTrackId: null };
 
 // Approved items are hidden after 5 minutes
@@ -330,34 +329,83 @@ async function pollQueue() {
   try {
     const r    = await fetch(`${API}?action=list&session=${S.session}`);
     const rows = await r.json();
-    // Track approved timestamps
+
+    // Track when items first become approved
     rows.filter(r=>r.status==='approved').forEach(r => {
       if (!APPROVED_TIMES[r.id]) APPROVED_TIMES[r.id] = Date.now();
     });
-    // Filter: hide refused + hide approved after 5 min
+
     const now = Date.now();
     const visible = rows.filter(r => {
       if (r.status==='refused') return false;
-      if (r.status==='approved' && APPROVED_TIMES[r.id] && now-APPROVED_TIMES[r.id]>5*60*1000) return false;
+      // Fade out approved after 5 min
+      if (r.status==='approved' && APPROVED_TIMES[r.id] && now - APPROVED_TIMES[r.id] > 5*60*1000) return false;
       return true;
     });
-    renderQueue(visible);
+
+    renderQueue(visible, now);
   } catch(e) {}
 }
 
-function renderQueue(rows) {
+function renderQueue(rows, now) {
   const el = document.getElementById('queue-list');
-  if (!rows.length) { el.innerHTML='<div class="empty">Aucune demande pour l\'instant</div>'; return; }
-  el.innerHTML='';
-  rows.forEach(r => {
-    const div=document.createElement('div');
-    div.className='q-item '+(r.status||'');
-    div.innerHTML=`
-      <img src="${r.img}" alt="">
-      <div class="info"><div class="qname">${r.name}</div><div class="qartist">${r.artist} · ${r.ts}</div></div>
-      <span class="badge ${r.status}">${r.status==='pending'?'EN ATTENTE':r.status==='approved'?'APPROUVÉ':'REFUSÉ'}</span>
-    `;
-    el.appendChild(div);
+  if (!rows.length) {
+    el.innerHTML='<div class="empty">Aucune demande pour l\'instant</div>';
+    return;
+  }
+
+  // Diff: only redraw if something changed
+  const newSig = rows.map(r=>r.id+r.status).join(',');
+  if (el.dataset.sig === newSig) return;
+  el.dataset.sig = newSig;
+
+  // Remove items no longer in list (with fade)
+  el.querySelectorAll('.q-item[data-id]').forEach(node => {
+    if (!rows.find(r=>r.id==node.dataset.id)) {
+      node.style.opacity='0'; node.style.transform='translateX(-8px)';
+      setTimeout(()=>node.remove(), 400);
+    }
+  });
+
+  // Add or update items
+  rows.forEach((r, i) => {
+    let node = el.querySelector(`.q-item[data-id="${r.id}"]`);
+    const label = r.status==='pending' ? 'EN ATTENTE' : r.status==='approved' ? 'APPROUVÉ' : 'REFUSÉ';
+
+    // Compute time remaining if approved
+    let timeNote = '';
+    if (r.status==='approved' && APPROVED_TIMES[r.id]) {
+      const remaining = Math.max(0, Math.round((5*60*1000 - (now - APPROVED_TIMES[r.id])) / 60000));
+      if (remaining > 0) timeNote = ` · disparaît dans ${remaining} min`;
+    }
+
+    if (!node) {
+      node = document.createElement('div');
+      node.className = 'q-item ' + r.status;
+      node.dataset.id = r.id;
+      node.style.opacity='0'; node.style.transform='translateX(8px)';
+      node.innerHTML = `
+        <img src="${r.img}" alt="">
+        <div class="info">
+          <div class="qname">${r.name}</div>
+          <div class="qartist">${r.artist} · ${r.ts}${timeNote}</div>
+        </div>
+        <span class="badge ${r.status}">${label}</span>
+      `;
+      // Insert at correct position
+      const existing = el.querySelectorAll('.q-item[data-id]');
+      if (existing[i]) el.insertBefore(node, existing[i]);
+      else el.appendChild(node);
+      // Animate in
+      requestAnimationFrame(()=>{ node.style.transition='opacity .35s,transform .35s'; node.style.opacity='1'; node.style.transform=''; });
+    } else {
+      // Update badge if status changed
+      const badge = node.querySelector('.badge');
+      if (badge) { badge.className='badge '+r.status; badge.textContent=label; }
+      const artist = node.querySelector('.qartist');
+      if (artist) artist.textContent = `${r.artist} · ${r.ts}${timeNote}`;
+      node.className = 'q-item ' + r.status;
+    }
   });
 }
 
