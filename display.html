@@ -420,7 +420,7 @@ function updateQueueDOM(requested, auto){
   if(requested.length){
     const lbl=document.createElement('div');
     lbl.className='q-section-label';
-    lbl.textContent='FILE D'ATTENTE';
+    lbl.textContent="FILE D'ATTENTE";
     frag.appendChild(lbl);
     requested.forEach((t,i)=>{
       frag.appendChild(makeQItem(t, i+1, i===0, true));
@@ -513,7 +513,7 @@ async function fetchLyrics(title,artist,album,durationMs){
 
 function clearLyrics(state){
   const inner=document.getElementById('lyrics-inner');
-  const msgs={loading:'CHARGEMENT DES PAROLES',unavailable:'PAROLES NON DISPONIBLES',error:'ERREUR DE CHARGEMENT',''};
+  const msgs={loading:'CHARGEMENT DES PAROLES',unavailable:'PAROLES NON DISPONIBLES',error:'ERREUR DE CHARGEMENT','':''};
   inner.innerHTML=state?`<div class="lyrics-status${state==='loading'?' loading':''}">${msgs[state]}</div>`:'';
 }
 
