@@ -178,7 +178,7 @@ main{flex:1;max-width:860px;width:100%;margin:0 auto;padding:28px 20px;}
 <div id="toast"></div>
 
 <script>
-const API         = 'https://script.google.com/macros/s/AKfycbysSqZPvFwf24Rx9-zac9j97AigvO5EH5Bw5ZPrfVxVU-FNaEgTXjPWY0YJVA8BY2X3nw/exec';
+const API         = 'https://script.google.com/macros/s/AKfycbzfJrDdjO3ostRtSs_AHSlfyJwLlsu-Q6S8H64Ef4p1nTuJZ-2ouewbuZGvyXLADUIvRQ/exec';
 const SP_CLIENT_ID = 'ec90e6d275e4450cb50b7926e8a3ff10';
 const REDIRECT_URI = 'https://nathbu92.github.io/flux/';
 
@@ -292,7 +292,7 @@ async function connectSpotify() {
   const verifier  = generateVerifier(64);
   const challenge = await generateChallenge(verifier);
   localStorage.setItem('pkce_verifier', verifier);
-  const scopes = 'user-read-currently-playing user-read-playback-state user-modify-playback-state user-read-private';
+  const scopes = 'user-read-currently-playing user-read-playback-state user-modify-playback-state user-read-private user-top-read user-read-recently-played';
   location.href = `https://accounts.spotify.com/authorize`
     + `?client_id=${SP_CLIENT_ID}`
     + `&response_type=code`
