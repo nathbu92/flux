@@ -138,6 +138,20 @@ main{flex:1;max-width:860px;width:100%;margin:0 auto;padding:28px 20px;}
 
 <!-- APP -->
 <div id="app" style="display:none;flex-direction:column;min-height:100vh;">
+  <div id="sp-reconnect-banner" style="display:none;background:linear-gradient(90deg,rgba(239,68,68,.12),rgba(239,68,68,.04));border-bottom:1px solid rgba(239,68,68,.3);padding:10px 24px;align-items:center;justify-content:center;gap:14px;font-family:var(--mono);font-size:0.75rem;color:#fca5a5;">
+    <span>⚠️ La connexion Spotify a expiré — reconnecte-la pour continuer à gérer la file d'attente.</span>
+    <button class="btn" style="padding:6px 16px;font-size:0.7rem;" onclick="connectSpotify()">Reconnecter Spotify →</button>
+  </div>
+
+  <!-- REFRESH SUCCESS MODAL -->
+  <div id="sp-refresh-modal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;">
+    <div style="background:var(--surface2);border:1px solid var(--green);border-radius:8px;padding:28px 32px;max-width:360px;text-align:center;font-family:var(--mono);">
+      <div style="font-size:2rem;margin-bottom:10px;">✅</div>
+      <div style="color:var(--green);font-weight:700;font-size:0.85rem;letter-spacing:1px;margin-bottom:8px;">TOKEN SPOTIFY RENOUVELÉ</div>
+      <div style="color:var(--muted);font-size:0.7rem;line-height:1.6;margin-bottom:18px;">La connexion a été réinitialisée automatiquement.<br>Nouvelle validité : <span id="sp-refresh-modal-time" style="color:var(--text);">1h</span></div>
+      <button class="btn" onclick="document.getElementById('sp-refresh-modal').style.display='none'">Fermer</button>
+    </div>
+  </div>
   <header>
     <div>
       <div class="brand">⚡ FLUX ADMIN</div>
@@ -157,7 +171,13 @@ main{flex:1;max-width:860px;width:100%;margin:0 auto;padding:28px 20px;}
         <span class="sp-dot"></span>
         <span id="sp-label">Connecter Spotify</span>
       </button>
-      <button class="sp-pill" onclick="logout()" style="border-color:var(--red);color:var(--red);margin-top:2px;" title="Quitter la session"><span style="font-size:0.75rem">⏻</span> Déconnexion</button>
+      <div id="sp-countdown" style="display:none;font-family:var(--mono);font-size:0.58rem;color:var(--muted);letter-spacing:1px;">
+        Token valide : <span id="sp-countdown-val">—</span>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button class="sp-pill" onclick="logout()" style="border-color:var(--red);color:var(--red);" title="Quitter la session"><span style="font-size:0.75rem">⏻</span> Déconnexion</button>
+        <button class="sp-pill" onclick="deleteSessionPrompt()" style="border-color:var(--red);color:var(--red);" title="Supprimer définitivement cette session">🗑 Supprimer la session</button>
+      </div>
     </div>
   </header>
 
@@ -178,7 +198,7 @@ main{flex:1;max-width:860px;width:100%;margin:0 auto;padding:28px 20px;}
 <div id="toast"></div>
 
 <script>
-const API         = 'https://script.google.com/macros/s/AKfycbzfJrDdjO3ostRtSs_AHSlfyJwLlsu-Q6S8H64Ef4p1nTuJZ-2ouewbuZGvyXLADUIvRQ/exec';
+const API         = 'https://script.google.com/macros/s/AKfycbwue-u0fUbeHM1gj0VbUy2drIEcRUDWtysNHfeqrTOSCKyhBt3bq4U6bV9VsqmgMYbkrg/exec';
 const SP_CLIENT_ID = 'ec90e6d275e4450cb50b7926e8a3ff10';
 const REDIRECT_URI = 'https://nathbu92.github.io/flux/';
 
@@ -285,6 +305,82 @@ function launchApp() {
   setInterval(poll, 3000);
   pollNP();
   setInterval(pollNP, 6000);
+  checkTokenExpiry();
+  setInterval(checkTokenExpiry, 2 * 60 * 1000); // proactive refresh check every 2 min
+  updateCountdown();
+  setInterval(updateCountdown, 1000); // live countdown display
+}
+
+// ── COUNTDOWN: live display of remaining token validity ──
+function updateCountdown() {
+  const sp = JSON.parse(localStorage.getItem('flux_sp') || 'null');
+  const el = document.getElementById('sp-countdown');
+  const val = document.getElementById('sp-countdown-val');
+  if (!sp) { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  const remaining = Math.max(0, sp.expiry - Date.now());
+  const m = Math.floor(remaining / 60000);
+  const s = Math.floor((remaining % 60000) / 1000);
+  val.textContent = remaining > 0
+    ? `${m}:${String(s).padStart(2,'0')}`
+    : 'expiré';
+  val.style.color = remaining < 10*60*1000 ? 'var(--amber)' : 'var(--muted)';
+  if (remaining <= 0) val.style.color = 'var(--red)';
+}
+
+// ── TOKEN EXPIRY: auto-refresh, fallback to reconnect banner ──
+async function checkTokenExpiry() {
+  const sp = JSON.parse(localStorage.getItem('flux_sp') || 'null');
+  const banner = document.getElementById('sp-reconnect-banner');
+  if (!sp) { banner.style.display = 'none'; return; }
+
+  const timeLeft = sp.expiry - Date.now();
+  // Refresh proactively when less than 10 minutes remain
+  if (timeLeft < 10 * 60 * 1000) {
+    try {
+      const res = await apiFetch({ action: 'refreshAccessToken', session: S.session });
+      if (res.ok && res.access_token) {
+        sp.access = res.access_token;
+        sp.expiry = res.expiry;
+        localStorage.setItem('flux_sp', JSON.stringify(sp));
+        banner.style.display = 'none';
+        showRefreshModal(res.expiry);
+        return;
+      }
+    } catch(e) {}
+    // Refresh failed (token revoked or expired) → show reconnect banner
+    if (timeLeft < 0) {
+      banner.style.display = 'flex';
+    }
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
+function showRefreshModal(expiry) {
+  const modal = document.getElementById('sp-refresh-modal');
+  const timeEl = document.getElementById('sp-refresh-modal-time');
+  const remainingMin = Math.round((expiry - Date.now()) / 60000);
+  timeEl.textContent = `${remainingMin} min`;
+  modal.style.display = 'flex';
+}
+
+// ── DELETE SESSION ──
+async function deleteSessionPrompt() {
+  if (!confirm(`Supprimer définitivement la session "${S.session}" ?\n\nToutes les demandes seront perdues. Cette action est irréversible.`)) return;
+  if (!confirm('Confirme à nouveau : supprimer la session pour toujours ?')) return;
+  try {
+    const res = await apiFetch({ action: 'deleteSession', session: S.session, code: S.session });
+    if (res.ok) {
+      localStorage.removeItem('flux_session');
+      localStorage.removeItem('flux_sp');
+      localStorage.removeItem('pkce_verifier');
+      toast('🗑 Session supprimée');
+      setTimeout(() => location.reload(), 800);
+    } else {
+      toast('Erreur : ' + (res.error || 'inconnue'));
+    }
+  } catch(e) { toast('Erreur réseau'); }
 }
 
 // ── SPOTIFY ──

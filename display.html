@@ -86,30 +86,32 @@ body{font-family:'Space Mono',monospace;background:#080808;color:#f2f2f2;}
 /* Readability backdrop — independent of album accent color */
 #lyrics-panel::before{
   content:'';position:absolute;inset:0;z-index:0;
-  background:radial-gradient(ellipse at center, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 100%);
+  background:rgba(5,5,5,0.72);
+  backdrop-filter:blur(2px);
 }
 #lyrics-scroll{width:100%;max-width:760px;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;position:relative;z-index:1;}
 #lyrics-inner{display:flex;flex-direction:column;align-items:center;gap:14px;transition:transform .6s cubic-bezier(0.4,0,0.2,1);will-change:transform;}
 .lyric-line{
   font-family:'DM Sans',sans-serif;font-size:1.5rem;font-weight:300;
   text-align:center;line-height:1.55;padding:4px 8px;
-  color:rgba(255,255,255,0.16);
+  color:rgba(255,255,255,0.32);
   transition:color .55s ease,font-size .45s ease,font-weight .4s ease,opacity .45s ease,transform .45s ease;
-  opacity:0.25;white-space:pre-wrap;transform:scale(0.94);
+  opacity:0.55;white-space:pre-wrap;transform:scale(0.94);
   will-change:transform,opacity,color;
 }
-.lyric-line.near2{color:rgba(255,255,255,0.28);opacity:0.4;transform:scale(0.97);}
-.lyric-line.near1{color:rgba(255,255,255,0.6);opacity:0.78;font-size:1.7rem;transform:scale(0.99);}
+.lyric-line.near{color:rgba(255,255,255,0.85);opacity:0.9;}
+.lyric-line.near2{color:rgba(255,255,255,0.4);opacity:0.6;transform:scale(0.97);}
+.lyric-line.near1{color:rgba(255,255,255,0.75);opacity:0.92;font-size:1.7rem;transform:scale(0.99);}
 .lyric-line.active{
   color:#fff;font-size:2.4rem;font-weight:700;
   opacity:1;text-shadow:0 2px 30px rgba(0,0,0,0.8),0 0 60px var(--glow);
   transform:scale(1);
 }
-.lyric-line.past1{color:rgba(255,255,255,0.32);opacity:0.48;font-size:1.5rem;transform:scale(0.97);}
-.lyric-line.past2{color:rgba(255,255,255,0.14);opacity:0.22;font-size:1.35rem;transform:scale(0.94);}
-.lyric-line.far{opacity:0.1;transform:scale(0.9);}
+.lyric-line.past1{color:rgba(255,255,255,0.42);opacity:0.6;font-size:1.5rem;transform:scale(0.97);}
+.lyric-line.past2{color:rgba(255,255,255,0.22);opacity:0.38;font-size:1.35rem;transform:scale(0.94);}
+.lyric-line.far{opacity:0.18;transform:scale(0.9);}
 .lyric-line.empty-line{height:12px;opacity:0;}
-.lyrics-status{color:rgba(255,255,255,0.3);font-size:0.72rem;letter-spacing:3px;text-transform:uppercase;}
+.lyrics-status{color:rgba(255,255,255,0.5);font-size:0.72rem;letter-spacing:3px;text-transform:uppercase;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
 .lyrics-status.loading{animation:blink 1.4s infinite;}
 
@@ -243,7 +245,7 @@ body{font-family:'Space Mono',monospace;background:#080808;color:#f2f2f2;}
 </div>
 
 <script>
-const API = 'https://script.google.com/macros/s/AKfycbzfJrDdjO3ostRtSs_AHSlfyJwLlsu-Q6S8H64Ef4p1nTuJZ-2ouewbuZGvyXLADUIvRQ/exec';
+const API = 'https://script.google.com/macros/s/AKfycbwue-u0fUbeHM1gj0VbUy2drIEcRUDWtysNHfeqrTOSCKyhBt3bq4U6bV9VsqmgMYbkrg/exec';
 
 const S = {
   session:null, lyricsOn:false, lyrics:[], progressTimer:null,
