@@ -534,7 +534,8 @@ async function fetchLyrics(title,artist,album,durationMs){
       S.lyrics=parseSynced(data.syncedLyrics);
       buildLyricsDOM(); updateActiveLyric(S.progressMs/1000);
     }else if(data.plainLyrics){
-      buildPlainLyrics(data.plainLyrics);
+      buildEstimatedLyrics(data.plainLyrics, durationMs);
+      updateActiveLyric(S.progressMs/1000);
     }else{clearLyrics('unavailable');}
   }catch(e){clearLyrics('error');}
 }
@@ -563,11 +564,26 @@ function buildLyricsDOM(){
   ).join('');
 }
 
-function buildPlainLyrics(plain){
-  const inner=document.getElementById('lyrics-inner');
-  inner.innerHTML=plain.split('\n').map(l=>
-    l.trim()?`<div class="lyric-line near">${l}</div>`:'<div class="lyric-line empty-line"></div>'
-  ).join('');
+// Lyrics without sync data: estimate timing by spreading lines evenly
+// across the track duration, so the active-line highlight still works.
+function buildEstimatedLyrics(plain, durationMs){
+  const rawLines = plain.split('\n');
+  const totalSec = (durationMs || 180000) / 1000;
+  const nonEmpty = rawLines.filter(l=>l.trim()).length || 1;
+
+  const start = totalSec * 0.02;
+  const end   = totalSec * 0.96;
+  const step  = (end - start) / Math.max(1, nonEmpty - 1);
+
+  let idx = 0;
+  S.lyrics = rawLines.map(l=>{
+    if (!l.trim()) return { time: -1, text: '' };
+    const time = start + idx * step;
+    idx++;
+    return { time, text: l.trim() };
+  });
+
+  buildLyricsDOM();
 }
 
 function updateActiveLyric(sec){
