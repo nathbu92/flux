@@ -555,7 +555,9 @@ function parseSynced(raw){
   return raw.split('\n').map(line=>{
     const m=line.match(/^\[(\d+):(\d+(?:\.\d+)?)\](.*)/);
     if(!m)return null;
-    const text=m[3].trim();
+    let text=m[3].trim();
+    // lrclib sometimes ships bilingual lines joined by '^' (orig^translation) — keep only the original
+    if(text.includes('^')) text=text.split('^')[0].trim();
     return{time:parseInt(m[1])*60+parseFloat(m[2]),text:text};
   }).filter(Boolean);
 }
@@ -581,9 +583,11 @@ function buildEstimatedLyrics(plain, durationMs){
   let idx = 0;
   S.lyrics = rawLines.map(l=>{
     if (!l.trim()) return { time: -1, text: '' };
+    let text = l.trim();
+    if (text.includes('^')) text = text.split('^')[0].trim();
     const time = start + idx * step;
     idx++;
-    return { time, text: l.trim() };
+    return { time, text };
   });
 
   buildLyricsDOM();
@@ -591,12 +595,15 @@ function buildEstimatedLyrics(plain, durationMs){
 
 function updateActiveLyric(sec){
   if(!S.lyrics.length)return;
-  let idx=0;
-  for(let i=0;i<S.lyrics.length;i++){if(S.lyrics[i].time>=0 && S.lyrics[i].time<=sec)idx=i;else if(S.lyrics[i].time>=0)break;}
-  if(idx===lastActiveIdx && document.querySelector('#lyrics-inner .lyric-line.active'))return;
-  lastActiveIdx=idx;
-
   const lines=document.querySelectorAll('#lyrics-inner .lyric-line');
+  if(!lines.length)return;
+
+  let idx=0;
+  for(let i=0;i<S.lyrics.length;i++){
+    if(S.lyrics[i].time>=0 && S.lyrics[i].time<=sec) idx=i;
+    else if(S.lyrics[i].time>=0) break;
+  }
+
   lines.forEach((el,i)=>{
     const d=i-idx;
     el.classList.remove('active','near1','near2','past1','past2','far');
