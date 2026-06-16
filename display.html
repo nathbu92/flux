@@ -532,9 +532,12 @@ async function fetchLyrics(title,artist,album,durationMs){
     const data=await r.json();
     if(data.syncedLyrics){
       S.lyrics=parseSynced(data.syncedLyrics);
-      buildLyricsDOM(); updateActiveLyric(S.progressMs/1000);
+      buildLyricsDOM();
+      lastActiveIdx=-999; // force first render
+      updateActiveLyric(S.progressMs/1000);
     }else if(data.plainLyrics){
       buildEstimatedLyrics(data.plainLyrics, durationMs);
+      lastActiveIdx=-999; // force first render
       updateActiveLyric(S.progressMs/1000);
     }else{clearLyrics('unavailable');}
   }catch(e){clearLyrics('error');}
@@ -589,8 +592,8 @@ function buildEstimatedLyrics(plain, durationMs){
 function updateActiveLyric(sec){
   if(!S.lyrics.length)return;
   let idx=0;
-  for(let i=0;i<S.lyrics.length;i++){if(S.lyrics[i].time<=sec)idx=i;else break;}
-  if(idx===lastActiveIdx)return;
+  for(let i=0;i<S.lyrics.length;i++){if(S.lyrics[i].time>=0 && S.lyrics[i].time<=sec)idx=i;else if(S.lyrics[i].time>=0)break;}
+  if(idx===lastActiveIdx && document.querySelector('#lyrics-inner .lyric-line.active'))return;
   lastActiveIdx=idx;
 
   const lines=document.querySelectorAll('#lyrics-inner .lyric-line');
