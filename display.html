@@ -93,24 +93,24 @@ body{font-family:'Space Mono',monospace;background:#080808;color:#f2f2f2;}
 #lyrics-inner{display:flex;flex-direction:column;align-items:center;gap:14px;transition:transform .6s cubic-bezier(0.4,0,0.2,1);will-change:transform;}
 .lyric-line{
   font-family:'DM Sans',sans-serif;font-size:1.5rem;font-weight:300;
-  text-align:center;line-height:1.55;padding:4px 8px;
+  text-align:center;line-height:1.55;padding:0 8px;
+  height:64px;display:flex;align-items:center;justify-content:center;
   color:rgba(255,255,255,0.32);
-  transition:color .55s ease,font-size .45s ease,font-weight .4s ease,opacity .45s ease,transform .45s ease;
-  opacity:0.55;white-space:pre-wrap;transform:scale(0.94);
-  will-change:transform,opacity,color;
+  transition:color .55s ease,font-weight .4s ease,opacity .45s ease;
+  opacity:0.55;white-space:pre-wrap;
+  will-change:opacity,color;
 }
 .lyric-line.near{color:rgba(255,255,255,0.85);opacity:0.9;}
-.lyric-line.near2{color:rgba(255,255,255,0.4);opacity:0.6;transform:scale(0.97);}
-.lyric-line.near1{color:rgba(255,255,255,0.75);opacity:0.92;font-size:1.7rem;transform:scale(0.99);}
+.lyric-line.near2{color:rgba(255,255,255,0.4);opacity:0.6;}
+.lyric-line.near1{color:rgba(255,255,255,0.75);opacity:0.92;font-size:1.6rem;}
 .lyric-line.active{
-  color:#fff;font-size:2.4rem;font-weight:700;
+  color:#fff;font-size:1.9rem;font-weight:700;
   opacity:1;text-shadow:0 2px 30px rgba(0,0,0,0.8),0 0 60px var(--glow);
-  transform:scale(1);
 }
-.lyric-line.past1{color:rgba(255,255,255,0.42);opacity:0.6;font-size:1.5rem;transform:scale(0.97);}
-.lyric-line.past2{color:rgba(255,255,255,0.22);opacity:0.38;font-size:1.35rem;transform:scale(0.94);}
-.lyric-line.far{opacity:0.18;transform:scale(0.9);}
-.lyric-line.empty-line{height:12px;opacity:0;}
+.lyric-line.past1{color:rgba(255,255,255,0.42);opacity:0.6;font-size:1.45rem;}
+.lyric-line.past2{color:rgba(255,255,255,0.22);opacity:0.38;font-size:1.4rem;}
+.lyric-line.far{opacity:0.18;}
+.lyric-line.empty-line{height:64px;opacity:0;}
 .lyrics-status{color:rgba(255,255,255,0.5);font-size:0.72rem;letter-spacing:3px;text-transform:uppercase;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
 .lyrics-status.loading{animation:blink 1.4s infinite;}
@@ -607,7 +607,15 @@ function updateActiveLyric(sec){
   lines.forEach((el,i)=>{
     const d=i-idx;
     el.classList.remove('active','near1','near2','past1','past2','far');
-    if(d===0)        el.classList.add('active');
+    el.style.color=''; el.style.fontWeight=''; el.style.opacity=''; el.style.textShadow='';
+
+    if(d===0){
+      el.classList.add('active');
+      el.style.color='#ffffff';
+      el.style.fontWeight='700';
+      el.style.opacity='1';
+      el.style.textShadow='0 2px 30px rgba(0,0,0,0.8), 0 0 60px var(--glow)';
+    }
     else if(d===1)   el.classList.add('near1');
     else if(d===2)   el.classList.add('near2');
     else if(d===-1)  el.classList.add('past1');
@@ -615,14 +623,15 @@ function updateActiveLyric(sec){
     else             el.classList.add('far');
   });
 
-  // Smooth translate — no scrollIntoView jank
+  // Stable centering: use a fixed average line height instead of measuring
+  // offsetTop (which would thrash while font-size transitions are running
+  // on neighboring lines, causing visible jumping).
   const inner=document.getElementById('lyrics-inner');
   const scroll=document.getElementById('lyrics-scroll');
-  const activeLine=inner.children[idx];
-  if(!activeLine)return;
   const scrollH=scroll.offsetHeight;
-  const lineTop=activeLine.offsetTop+activeLine.offsetHeight/2;
-  inner.style.transform=`translateY(${Math.round(scrollH/2-lineTop)}px)`;
+  const LINE_H=78; // 64px line height + 14px gap, must match CSS
+  const offset = idx * LINE_H;
+  inner.style.transform=`translateY(${Math.round(scrollH/2-offset-LINE_H/2)}px)`;
 }
 </script>
 </body>
