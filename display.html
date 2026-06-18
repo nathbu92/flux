@@ -325,6 +325,24 @@ function startApp(){
   fetchNowPlaying(); setInterval(fetchNowPlaying,5000);
   pollQueue(); setInterval(pollQueue,3000);
   pollPending(); setInterval(pollPending,5000);
+
+  // The browser suspends network/timers while the tab is hidden/inactive
+  // (e.g. ERR_NETWORK_IO_SUSPENDED on a TV display left unattended).
+  // When it becomes visible again, force an immediate refresh of everything.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      fetchNowPlaying();
+      pollQueue();
+      pollPending();
+      if (S.lyricsOn && S.currentTrackId) {
+        fetchLyrics(
+          document.getElementById('np-title').textContent,
+          document.getElementById('np-artist').textContent,
+          '', S.durationMs
+        );
+      }
+    }
+  });
 }
 
 function tickClock(){
@@ -519,7 +537,9 @@ function toggleLyrics(){
   }
 }
 
-async function fetchLyrics(title,artist,album,durationMs){
+let lyricsRequestId=0;
+async function fetchLyrics(title,artist,album,durationMs,retryCount=0){
+  const myRequestId=++lyricsRequestId;
   clearLyrics('loading');
   S.lyrics=[];
   lastActiveIdx=-1;
@@ -528,8 +548,11 @@ async function fetchLyrics(title,artist,album,durationMs){
     if(album) params.set('album_name',album);
     if(durationMs) params.set('duration',Math.floor(durationMs/1000));
     const r=await fetch(`https://lrclib.net/api/get?${params}`);
+    // A newer fetchLyrics call has started since — discard this stale response
+    if(myRequestId!==lyricsRequestId) return;
     if(!r.ok){clearLyrics('unavailable');return;}
     const data=await r.json();
+    if(myRequestId!==lyricsRequestId) return;
     if(data.syncedLyrics){
       S.lyrics=parseSynced(data.syncedLyrics);
       buildLyricsDOM();
@@ -540,7 +563,16 @@ async function fetchLyrics(title,artist,album,durationMs){
       lastActiveIdx=-999; // force first render
       updateActiveLyric(S.progressMs/1000);
     }else{clearLyrics('unavailable');}
-  }catch(e){clearLyrics('error');}
+  }catch(e){
+    if(myRequestId!==lyricsRequestId) return;
+    // Network errors (e.g. tab was suspended, ERR_NETWORK_IO_SUSPENDED) often
+    // resolve themselves once the tab is active again — retry a couple times.
+    if(retryCount<2){
+      setTimeout(()=>fetchLyrics(title,artist,album,durationMs,retryCount+1), 1500);
+    }else{
+      clearLyrics('error');
+    }
+  }
 }
 
 function clearLyrics(state){
